@@ -4,7 +4,7 @@ import shapeless.ops.hlist.Prepend
 
 import scala.annotation.compileTimeOnly
 
-abstract class Rule[+T <: HList] {
+sealed abstract class Rule[+T <: HList] {
 
   @compileTimeOnly("Calls to method '~' have to be inside a macro invocation!")
   def ~[U <: HList, V >: T <: HList](other: Rule[U])(implicit P: Prepend[V, U]): Rule[P.Out] = compileTime

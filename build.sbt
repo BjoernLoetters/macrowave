@@ -15,6 +15,7 @@ addCompilerPlugin(
 
 libraryDependencies ++= Seq(
   "org.scala-lang"         % "scala-reflect"             % scalaVersion.value,
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5"
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5",
+  "com.chuusai"            %% "shapeless"                % "2.3.2"
 )
 

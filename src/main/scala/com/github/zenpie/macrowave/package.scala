@@ -2,6 +2,7 @@ package com.github.zenpie
 
 import scala.annotation.compileTimeOnly
 import scala.language.implicitConversions
+import scala.util.matching.Regex
 
 package object macrowave {
 
@@ -12,11 +13,17 @@ package object macrowave {
   val HNil = shapeless.HNil
 
 
+  type Rule1[+T] = Rule[T :: HNil]
+
+
   def compileTime: Nothing = throw new UnsupportedOperationException("")
 
 
   @compileTimeOnly("Calls to function 'token' have to be inside a macro invocation!")
-  implicit def token(regex: RegExp): Rule[String :: HNil] = compileTime
+  implicit def token(regex: RegExp): Token = compileTime
+
+  @compileTimeOnly("Calls to function 'singletonRule' have to be inside a macro invocation!")
+  implicit def singletonRule(token: Token): Rule1[String] = compileTime
 
 
   @compileTimeOnly("Calls to function 'literal' have to be inside a macro invocation!")
@@ -24,6 +31,9 @@ package object macrowave {
 
   @compileTimeOnly("Calls to function 'regex' have to be inside a macro invocation!")
   def regex(string: String): RegExp = compileTime
+
+  @compileTimeOnly("Calls to function 'regex' have to be inside a macro invocation!")
+  implicit def regex(regex: Regex): RegExp = compileTime
 
   /*
      TODO: Let SBT do the (here) hardcoded code-generation

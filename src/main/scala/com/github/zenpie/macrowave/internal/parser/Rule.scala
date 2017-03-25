@@ -1,5 +1,7 @@
 package com.github.zenpie.macrowave.internal.parser
 
+import com.github.zenpie.macrowave.internal.ids.{ActionId, TypeId}
+
 sealed trait Rule {
   val tpe: Any
 }

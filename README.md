@@ -1,4 +1,7 @@
 
+[![Build Status](https://travis-ci.org/zen-pie/macrowave.svg?branch=master)](https://travis-ci.org/zen-pie/macrowave)
+[![Build status](https://ci.appveyor.com/api/projects/status/o3dhn8q7m4xu6ahg/branch/master?svg=true)](https://ci.appveyor.com/project/keddelzz/macrowave/branch/master)
+
 # macrowave
 
 Macrowave is a Scala library, which brings scanner and parser generators to the 21st century.

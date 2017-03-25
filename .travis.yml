@@ -6,4 +6,4 @@ scala:
 before_script:
   - sbt clean compile
 script:
-  - sbt test
+  - sbt testAll

@@ -85,7 +85,8 @@ object RegExpParser extends RegexParsers with ImplicitConversions {
         val input =
           if (start.length > 1 && start.charAt(1) == '^') scanner.rangeComplement(ranges)
           else ranges
-        input.foldLeft(EmptyString: Rule)(Alternate)
+        if (input.isEmpty) EmptyString
+        else input.reduceLeft(Alternate)
     }
 
   private def charComponent: Parser[Range] =

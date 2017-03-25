@@ -15,25 +15,33 @@ trait RuleParser extends MacroUtils {
   private[internal] def scannerRulesFromStatements(grammar: Grammar, stms: LinkedList[Tree]): Unit = {
 
     /* Collect defs/vals of type RegExp */
+
     val regexps = mutable.Map.empty[String, scanner.Rule]
+
+    def regexpDefinition(tree: Tree, name: TermName, tpt: Tree, value: Tree): Unit = {
+      regexps += ((name.toString, ScannerRule(regexps, value)))
+    }
 
     popSome(stms) {
       case tree @ q"""$_ def $name : $tpt = $value""" if RegExpTpe =:= tpt.tpe =>
-        regexps += ((name.toString, ScannerRule(regexps, value)))
+        regexpDefinition(tree, name, tpt, value)
       case tree @ q"""$_ val $name : $tpt = $value""" if RegExpTpe =:= tpt.tpe =>
-        regexps += ((name.toString, ScannerRule(regexps, value)))
+        regexpDefinition(tree, name, tpt, value)
     }
 
     /* Collect defs/vals of type Token */
+
+    def tokenDefinition(tree: Tree, name: TermName, tpt: Tree, value: Tree): Unit = {
+      val terminalId = grammar.terminalIdProvider.next()
+      grammar.namedTerminals += ((name.toString, terminalId))
+      grammar.terminals      += ((terminalId, Token(regexps, value)))
+    }
+
     popSome(stms) {
       case tree @ q"""$_ def $name : $tpt = $value""" if TokenTpe =:= tpt.tpe =>
-        val terminalId = grammar.terminalIdProvider.next()
-        grammar.namedTerminals += ((name.toString, terminalId))
-        grammar.terminals      += ((terminalId, Token(regexps, value)))
+        tokenDefinition(tree, name, tpt, value)
       case tree @ q"""$_ val $name : $tpt = $value""" if TokenTpe =:= tpt.tpe =>
-        val terminalId = grammar.terminalIdProvider.next()
-        grammar.namedTerminals += ((name.toString, terminalId))
-        grammar.terminals      += ((terminalId, Token(regexps, value)))
+        tokenDefinition(tree, name, tpt, value)
     }
 
   }

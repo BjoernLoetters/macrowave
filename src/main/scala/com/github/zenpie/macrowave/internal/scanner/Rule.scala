@@ -15,6 +15,10 @@ case class Concatenate(left: Rule, right: Rule) extends Rule {
 case class Alternate(left: Rule, right: Rule) extends Rule {
   def show = left.show + "|" + right.show
 }
+object Range {
+  def apply(from: Char, to: Char): Range =
+    Range(from min to, from max to)
+}
 case class Range(from: Char, to: Char) extends Rule {
   def show = if (from == to) from + "" else s"[$from-$to]"
 }

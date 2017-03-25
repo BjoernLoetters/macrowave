@@ -1,7 +1,6 @@
 package com.github.zenpie.macrowave.internal
 
 import com.github.zenpie.macrowave.internal.ids.{ActionId, NonTerminalId, TerminalId, TypeId}
-import com.github.zenpie.macrowave.internal.parser.{ActionId, NonTerminalId, TypeId}
 
 import scala.collection.mutable
 import scala.reflect.macros.blackbox

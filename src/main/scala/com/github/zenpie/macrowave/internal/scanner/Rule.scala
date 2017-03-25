@@ -30,3 +30,6 @@ case class Optional(rule: Rule) extends Rule {
     case _ => rule.show + "?"
   }
 }
+case object EmptyString extends Rule {
+  def show = ""
+}

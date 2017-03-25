@@ -2,10 +2,10 @@ package com.github.zenpie.macrowave.internal
 
 import java.util.LinkedList
 
-import scala.reflect.macros.blackbox
+import scala.reflect.macros.whitebox
 
 private[internal] trait MacroUtils {
-  val c: blackbox.Context
+  val c: whitebox.Context
   import c.universe._
 
   private[internal] val RegExpTpe = typeOf[com.github.zenpie.macrowave.RegExp]

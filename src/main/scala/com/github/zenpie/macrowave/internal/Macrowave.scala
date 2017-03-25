@@ -2,9 +2,9 @@ package com.github.zenpie.macrowave.internal
 
 import java.util.LinkedList
 
-import scala.reflect.macros.blackbox
+import scala.reflect.macros.whitebox
 
-class Macrowave(val c: blackbox.Context) extends AnyRef
+class Macrowave(val c: whitebox.Context) extends AnyRef
   with MacroUtils
   with scanner.RuleParser {
 

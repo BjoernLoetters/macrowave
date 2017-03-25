@@ -41,7 +41,7 @@ object RegExpParser extends RegexParsers with ImplicitConversions {
   private def postOp: Parser[Rule] =
     value ~ rep("(?<!\\\\)(\\?|\\+|\\*|(\\{\\s*([0-9]+|[0-9]+\\s*,|,\\s*[0-9]+|[0-9]+\\s*,\\s*[0-9]+)\\s*(?<!\\\\)\\}))".r) ^^ { case value ~ ops =>
       ops.foldLeft(value: Rule) {
-        case (acc, "?") => Optional(acc)
+        case (acc, "?") => Alternate(EmptyString, acc)
         case (acc, "+") => Concatenate(acc, Kleene(acc))
         case (acc, "*") => Kleene(acc)
         case (acc, quantifier) =>
@@ -49,7 +49,7 @@ object RegExpParser extends RegexParsers with ImplicitConversions {
           if (cleaned.startsWith(",")) {
             /* 0 to m */
             val max = cleaned.replaceAll(",", "").toInt
-            (0 until max).map(_ => Optional(acc))
+            (0 until max).map(_ => Alternate(EmptyString, acc))
               .foldLeft(EmptyString: Rule)(Concatenate)
           } else if (cleaned.endsWith(",")) {
             /* at least n */
@@ -61,7 +61,7 @@ object RegExpParser extends RegexParsers with ImplicitConversions {
             val Array(a, b) = cleaned.split(",").map(_.toInt)
             val (n, m) = (Math.min(a, b), Math.max(a, b))
             (0 until n).map(_ => acc).foldLeft(
-              (n until m).map(_ => Optional(acc))
+              (n until m).map(_ => Alternate(EmptyString, acc))
                 .foldLeft(EmptyString: Rule)(Concatenate)
             )(Concatenate)
           } else {

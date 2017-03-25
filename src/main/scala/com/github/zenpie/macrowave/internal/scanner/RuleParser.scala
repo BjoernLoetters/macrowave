@@ -59,7 +59,7 @@ trait RuleParser extends MacroUtils {
         scanner.Kleene(y)
       case q"$x.?" =>
         val y = helper(x)
-        scanner.Optional(y)
+        scanner.Alternate(EmptyString, y)
       case q"$x.+" =>
         val y = helper(x)
         scanner.Concatenate(y, scanner.Kleene(y))

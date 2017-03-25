@@ -24,12 +24,6 @@ case class Kleene(rule: Rule) extends Rule {
     case _ => rule.show + "*"
   }
 }
-case class Optional(rule: Rule) extends Rule {
-  def show = rule match {
-    case _: Concatenate | _: Alternate => s"(${rule.show})?"
-    case _ => rule.show + "?"
-  }
-}
 case object EmptyString extends Rule {
   def show = ""
 }

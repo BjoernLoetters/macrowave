@@ -77,20 +77,15 @@ object RegExpParser extends RegexParsers with ImplicitConversions {
     "(?<!\\\\)\\.".r ^^^ Range(Char.MinValue, Char.MaxValue)
 
   private def charClass: Parser[Rule] =
-    "(?<!\\\\)\\[\\^-?".r ~ rep(charComponent) ~ "-?(?<!\\\\)\\]".r ^^ {
+    "(?<!\\\\)\\[\\^?-?".r ~ rep(charComponent) ~ "-?(?<!\\\\)\\]".r ^^ {
       case start ~ components ~ end =>
         val ranges =
           if (start.endsWith("-") || end.startsWith("-")) components :+ Range('-', '-')
           else components
-        scanner.rangeComplement(ranges)
-          .foldLeft(EmptyString: Rule)(Alternate)
-    } |
-    "(?<!\\\\)\\[-?".r ~ rep(charComponent) ~ "-?(?<!\\\\)\\]".r ^^ {
-      case start ~ components ~ end =>
-        val ranges =
-          if (start.endsWith("-") || end.startsWith("-")) components :+ Range('-', '-')
-          else components
-        ranges.foldLeft(EmptyString: Rule)(Alternate)
+        val input =
+          if (start.length > 1 && start.charAt(1) == '^') scanner.rangeComplement(ranges)
+          else ranges
+        input.foldLeft(EmptyString: Rule)(Alternate)
     }
 
   private def charComponent: Parser[Range] =

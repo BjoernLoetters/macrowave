@@ -5,11 +5,11 @@ import java.util.LinkedList
 import com.github.zenpie.macrowave.internal.{Grammar, MacroUtils, scanner}
 
 import scala.collection.mutable
-import scala.reflect.macros.blackbox
+import scala.reflect.macros.whitebox
 import scala.util.{Failure, Success}
 
 trait RuleParser extends MacroUtils {
-  val c: blackbox.Context
+  val c: whitebox.Context
   import c.universe._
 
   private[internal] def scannerRulesFromStatements(grammar: Grammar, stms: LinkedList[Tree]): Unit = {

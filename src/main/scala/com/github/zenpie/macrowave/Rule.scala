@@ -1,7 +1,5 @@
 package com.github.zenpie.macrowave
 
-import shapeless.ops.hlist.Prepend
-
 import scala.annotation.compileTimeOnly
 
 sealed abstract class Rule[+T <: HList] {

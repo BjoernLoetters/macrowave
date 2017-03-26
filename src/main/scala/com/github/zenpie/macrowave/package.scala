@@ -12,6 +12,7 @@ package object macrowave {
   type HNil = shapeless.HNil
   val HNil = shapeless.HNil
 
+  type Prepend[P <: HList, S <: HList] = shapeless.ops.hlist.Prepend[P, S]
 
   type Rule1[+T] = Rule[T :: HNil]
 

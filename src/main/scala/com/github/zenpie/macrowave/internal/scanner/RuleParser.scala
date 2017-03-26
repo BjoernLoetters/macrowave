@@ -2,38 +2,47 @@ package com.github.zenpie.macrowave.internal.scanner
 
 import java.util.LinkedList
 
-import com.github.zenpie.macrowave.internal.{Grammar, MacroUtils, scanner}
+import com.github.zenpie.macrowave.internal._
 
 import scala.collection.mutable
-import scala.reflect.macros.blackbox
+import scala.reflect.macros.whitebox
 import scala.util.{Failure, Success}
 
 trait RuleParser extends MacroUtils {
-  val c: blackbox.Context
+  val c: whitebox.Context
   import c.universe._
 
   private[internal] def scannerRulesFromStatements(grammar: Grammar, stms: LinkedList[Tree]): Unit = {
 
     /* Collect defs/vals of type RegExp */
+
     val regexps = mutable.Map.empty[String, scanner.Rule]
 
-    popSome(stms) {
+    def regexpDefinition(tree: Tree, name: TermName, tpt: Tree, value: Tree): Unit = {
+      regexps += ((name.toString, ScannerRule(regexps, value)))
+    }
+
+    stms.popsome {
       case tree @ q"""$_ def $name : $tpt = $value""" if RegExpTpe =:= tpt.tpe =>
-        regexps += ((name.toString, ScannerRule(regexps, value)))
+        regexpDefinition(tree, name, tpt, value)
       case tree @ q"""$_ val $name : $tpt = $value""" if RegExpTpe =:= tpt.tpe =>
-        regexps += ((name.toString, ScannerRule(regexps, value)))
+        regexpDefinition(tree, name, tpt, value)
     }
 
     /* Collect defs/vals of type Token */
-    popSome(stms) {
+
+    def tokenDefinition(tree: Tree, name: TermName, tpt: Tree, value: Tree): Unit = {
+      val terminalId = grammar.terminalIdProvider.next()
+      grammar.namedTerminals += ((name.toString, terminalId))
+      grammar.terminalNames  += ((terminalId, name.toString))
+      grammar.terminals      += ((terminalId, Token(regexps, value)))
+    }
+
+    stms.popsome {
       case tree @ q"""$_ def $name : $tpt = $value""" if TokenTpe =:= tpt.tpe =>
-        val terminalId = grammar.terminalIdProvider.next()
-        grammar.namedTerminals += ((name.toString, terminalId))
-        grammar.terminals      += ((terminalId, Token(regexps, value)))
+        tokenDefinition(tree, name, tpt, value)
       case tree @ q"""$_ val $name : $tpt = $value""" if TokenTpe =:= tpt.tpe =>
-        val terminalId = grammar.terminalIdProvider.next()
-        grammar.namedTerminals += ((name.toString, terminalId))
-        grammar.terminals      += ((terminalId, Token(regexps, value)))
+        tokenDefinition(tree, name, tpt, value)
     }
 
   }
@@ -59,7 +68,7 @@ trait RuleParser extends MacroUtils {
         scanner.Kleene(y)
       case q"$x.?" =>
         val y = helper(x)
-        scanner.Optional(y)
+        scanner.Alternate(EmptyString, y)
       case q"$x.+" =>
         val y = helper(x)
         scanner.Concatenate(y, scanner.Kleene(y))

@@ -9,8 +9,9 @@ private[internal] trait MacroUtils {
   import c.universe._
 
   private[internal] val RegExpTpe = typeOf[com.github.zenpie.macrowave.RegExp]
-  private[internal] val TokenTpe  = typeOf[com.github.zenpie.macrowave.Token]
-  private[internal] val StartTpe  = typeOf[com.github.zenpie.macrowave.start]
+  private[internal] val TokenTpe = typeOf[com.github.zenpie.macrowave.Token]
+  private[internal] val StartTpe = typeOf[com.github.zenpie.macrowave.start]
+  private[internal] val WhiteSpaceTpe = typeOf[com.github.zenpie.macrowave.whiteSpace]
   private[internal] val SingletonRuleTpe = typeOf[com.github.zenpie.macrowave.Rule[
     com.github.zenpie.macrowave.::[String, com.github.zenpie.macrowave.HNil]]]
 
@@ -28,6 +29,7 @@ private[internal] trait MacroUtils {
     prefix match {
       case Select(Select(Select(Select(Ident(TermName("com")), TermName("github")), TermName("zenpie")), TermName("macrowave")), TermName("package")) => true
       case Select(Select(Select(Ident(TermName("com")), TermName("github")), TermName("zenpie")), TermName("macrowave")) => true
+      case Select(Select(This(TypeName("zenpie")), TermName("macrowave")), TermName("package")) => true
       case Select(This(TypeName("macrowave")), TermName("package")) => true
       case This(TypeName("macrowave")) => true
       case _ => false

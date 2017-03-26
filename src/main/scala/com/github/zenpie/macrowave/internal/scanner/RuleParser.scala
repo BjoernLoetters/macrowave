@@ -3,6 +3,7 @@ package com.github.zenpie.macrowave.internal.scanner
 import java.util.LinkedList
 
 import com.github.zenpie.macrowave.internal._
+import com.github.zenpie.macrowave.internal.ids.TerminalId
 
 import scala.collection.mutable
 import scala.reflect.macros.whitebox
@@ -31,11 +32,17 @@ trait RuleParser extends MacroUtils {
 
     /* Collect defs/vals of type Token */
 
+    val whiteSpaces = mutable.Set.empty[TerminalId]
+
     def tokenDefinition(tree: Tree, name: TermName, tpt: Tree, value: Tree): Unit = {
       val terminalId = grammar.terminalIdProvider.next()
       grammar.namedTerminals += ((name.toString, terminalId))
       grammar.terminalNames  += ((terminalId, name.toString))
       grammar.terminals      += ((terminalId, Token(regexps, value)))
+
+      if (hasAnnotation(tree, WhiteSpaceTpe)) {
+        whiteSpaces += terminalId
+      }
     }
 
     stms.popsome {
@@ -43,6 +50,13 @@ trait RuleParser extends MacroUtils {
         tokenDefinition(tree, name, tpt, value)
       case tree @ q"""$_ val $name : $tpt = $value""" if TokenTpe =:= tpt.tpe =>
         tokenDefinition(tree, name, tpt, value)
+    }
+
+    if (whiteSpaces.isEmpty || whiteSpaces.size == 1) {
+      grammar.whiteSpace = whiteSpaces.headOption
+    } else {
+      val whiteSpaceRuleNames = whiteSpaces.toList.map(grammar.terminalNames).sorted
+      c.error(c.enclosingPosition, s"Multiple definitions of whiteSpace-token: ${whiteSpaceRuleNames.mkString(", ")}!")
     }
 
   }

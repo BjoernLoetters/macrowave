@@ -60,7 +60,7 @@ class GrammarSpec extends FlatSpec with Matchers {
     }
   }
 
-  it should "compile, if multiple no whiteSpace token is defined" in {
+  it should "not compile, if multiple whiteSpace tokens are defined" in {
     illTyped(
       """{
       import com.github.zenpie.macrowave._

@@ -22,7 +22,7 @@ trait RuleParser extends MacroUtils {
       regexps += ((name.toString, ScannerRule(regexps, value)))
     }
 
-    stms.popSome {
+    stms.popsome {
       case tree @ q"""$_ def $name : $tpt = $value""" if RegExpTpe =:= tpt.tpe =>
         regexpDefinition(tree, name, tpt, value)
       case tree @ q"""$_ val $name : $tpt = $value""" if RegExpTpe =:= tpt.tpe =>
@@ -38,7 +38,7 @@ trait RuleParser extends MacroUtils {
       grammar.terminals      += ((terminalId, Token(regexps, value)))
     }
 
-    stms.popSome {
+    stms.popsome {
       case tree @ q"""$_ def $name : $tpt = $value""" if TokenTpe =:= tpt.tpe =>
         tokenDefinition(tree, name, tpt, value)
       case tree @ q"""$_ val $name : $tpt = $value""" if TokenTpe =:= tpt.tpe =>

@@ -16,11 +16,19 @@ final class Grammar(val c: whitebox.Context) {
 
   private[internal] val actionMapping = mutable.Map[ActionId, c.universe.Tree]()
   private[internal] val typeMapping = mutable.Map[TypeId, c.universe.Tree]()
-  private[internal] val nonTerminalMapping = mutable.Map[String, NonTerminalId]()
+
+  /* non-terminals */
+
+  private[internal] val namedNonTerminals = mutable.Map[String, NonTerminalId]()
+  private[internal] val nonTerminalNames  = mutable.Map[NonTerminalId, String]()
+  private[internal] val nonTerminals = mutable.Map[NonTerminalId, parser.Rule]()
+
+  private[internal] var startRule: NonTerminalId = _
 
   /* terminals */
 
   private[internal] val namedTerminals = mutable.Map[String, TerminalId]()
+  private[internal] val terminalNames = mutable.Map[TerminalId, String]()
   private[internal] val terminals = mutable.Map[TerminalId, scanner.Rule]()
 
 }

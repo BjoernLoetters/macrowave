@@ -6,7 +6,8 @@ import scala.reflect.macros.whitebox
 
 class Macrowave(val c: whitebox.Context) extends AnyRef
   with MacroUtils
-  with scanner.RuleParser {
+  with scanner.RuleParser
+  with parser.RuleParser {
 
   import c.universe._
 
@@ -20,6 +21,7 @@ class Macrowave(val c: whitebox.Context) extends AnyRef
         stms.foreach(stm => stmList.add(stm))
 
         scannerRulesFromStatements(grammar, stmList)
+        parserRulesFromStatements(grammar, stmList)
 
         q"""$mods class $cname(...$ctors) extends $superclasses {}"""
       case x =>

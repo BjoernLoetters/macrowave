@@ -10,29 +10,32 @@ private[internal] trait MacroUtils {
 
   private[internal] val RegExpTpe = typeOf[com.github.zenpie.macrowave.RegExp]
   private[internal] val TokenTpe  = typeOf[com.github.zenpie.macrowave.Token]
+  private[internal] val StartTpe  = typeOf[com.github.zenpie.macrowave.start]
+
+  private[internal] def isRuleTpe(tree: Tree): Boolean = tree match {
+    case tq"$prefix.Rule[$_]" => isMacrowavePackageObj(prefix)
+    case tq"$prefix.Rule1[$_]" => isMacrowavePackageObj(prefix)
+    case tq"Rule[$_]" => true
+    case tq"Rule1[$_]" => true
+    case _ => false
+  }
 
   private[internal] def isMacrowavePackageObj(prefix: Tree): Boolean =
-    Option(prefix) exists {
+    prefix match {
       case Select(Select(Select(Select(Ident(TermName("com")), TermName("github")), TermName("zenpie")), TermName("macrowave")), TermName("package")) => true
+      case Select(Select(Select(Ident(TermName("com")), TermName("github")), TermName("zenpie")), TermName("macrowave")) => true
       case Select(This(TypeName("macrowave")), TermName("package")) => true
+      case This(TypeName("macrowave")) => true
       case _ => false
     }
 
   private[internal] def isScalaPredef(prefix: Tree): Boolean =
-    Option(prefix) exists {
+    prefix match {
       case Select(This(TypeName("scala")), TermName("Predef")) => true
       case _ => false
     }
 
-  private[internal] def popSome(stms: LinkedList[Tree])(pf: PartialFunction[Tree, Unit]): Unit = {
-    val iter = stms.iterator()
-    while (iter.hasNext) iter.next() match {
-      case elem if pf isDefinedAt elem =>
-        pf(elem)
-        iter.remove()
-      case _ =>
-        ()
-    }
-  }
+  private[internal] def hasAnnotation(tree: Tree, annotation: Type): Boolean =
+    tree.symbol.annotations.exists(_.tree.tpe =:= annotation)
 
 }

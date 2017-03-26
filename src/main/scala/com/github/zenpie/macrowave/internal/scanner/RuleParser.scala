@@ -2,7 +2,7 @@ package com.github.zenpie.macrowave.internal.scanner
 
 import java.util.LinkedList
 
-import com.github.zenpie.macrowave.internal.{Grammar, MacroUtils, scanner}
+import com.github.zenpie.macrowave.internal._
 
 import scala.collection.mutable
 import scala.reflect.macros.whitebox
@@ -22,7 +22,7 @@ trait RuleParser extends MacroUtils {
       regexps += ((name.toString, ScannerRule(regexps, value)))
     }
 
-    popSome(stms) {
+    stms.popSome {
       case tree @ q"""$_ def $name : $tpt = $value""" if RegExpTpe =:= tpt.tpe =>
         regexpDefinition(tree, name, tpt, value)
       case tree @ q"""$_ val $name : $tpt = $value""" if RegExpTpe =:= tpt.tpe =>
@@ -34,10 +34,11 @@ trait RuleParser extends MacroUtils {
     def tokenDefinition(tree: Tree, name: TermName, tpt: Tree, value: Tree): Unit = {
       val terminalId = grammar.terminalIdProvider.next()
       grammar.namedTerminals += ((name.toString, terminalId))
+      grammar.terminalNames  += ((terminalId, name.toString))
       grammar.terminals      += ((terminalId, Token(regexps, value)))
     }
 
-    popSome(stms) {
+    stms.popSome {
       case tree @ q"""$_ def $name : $tpt = $value""" if TokenTpe =:= tpt.tpe =>
         tokenDefinition(tree, name, tpt, value)
       case tree @ q"""$_ val $name : $tpt = $value""" if TokenTpe =:= tpt.tpe =>

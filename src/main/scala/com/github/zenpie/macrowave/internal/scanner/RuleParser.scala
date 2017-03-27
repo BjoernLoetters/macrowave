@@ -32,7 +32,7 @@ trait RuleParser extends MacroUtils {
 
     /* Collect defs/vals of type Token */
 
-    val whiteSpaces = mutable.ArrayBuffer.empty[TerminalId]
+    val whiteSpaces = mutable.ListBuffer.empty[TerminalId]
 
     def tokenDefinition(tree: Tree, name: TermName, tpt: Tree, value: Tree): Unit = {
       val terminalId = grammar.terminalIdProvider.next()

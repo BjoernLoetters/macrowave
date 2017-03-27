@@ -38,4 +38,6 @@ final class Grammar(val c: whitebox.Context) {
   private[internal] val terminalNames = mutable.Map[TerminalId, String]()
   private[internal] val terminals = mutable.Map[TerminalId, scanner.Rule]()
 
+  private[internal] var whiteSpace = Option.empty[TerminalId]
+
 }

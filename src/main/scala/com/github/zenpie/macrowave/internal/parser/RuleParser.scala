@@ -15,7 +15,7 @@ trait RuleParser extends MacroUtils {
   private[internal] def parserRulesFromStatements(grammar: Grammar, stms: LinkedList[Tree]): Unit = {
     var startRule: Option[NonTerminalId] = None
 
-    val startRules  = mutable.Set.empty[NonTerminalId]
+    val startRules  = mutable.ListBuffer.empty[NonTerminalId]
     val nonTermTpes = mutable.Map.empty[String, Type]
 
     /* Collect types of non-terminals */
@@ -31,9 +31,10 @@ trait RuleParser extends MacroUtils {
 
     def ruleDefinition(tree: Tree, name: TermName, tpt: Tree, value: Tree): Unit = {
       val nonTerminalId = grammar.nonTerminalIdProvider.next()
-      grammar.namedNonTerminals += ((name.toString, nonTerminalId))
-      grammar.nonTerminalNames  += ((nonTerminalId, name.toString))
-      grammar.nonTerminals      += ((nonTerminalId, ParserRule(grammar, nonTermTpes, value)))
+      grammar.namedNonTerminals    += ((name.toString, nonTerminalId))
+      grammar.nonTerminalNames     += ((nonTerminalId, name.toString))
+      grammar.nonTerminals         += ((nonTerminalId, ParserRule(grammar, nonTermTpes, value)))
+      grammar.nonTerminalPositions += ((nonTerminalId, tree.pos.asInstanceOf[grammar.Position]))
 
       if (hasAnnotation(tree, StartTpe)) {
         startRules += nonTerminalId
@@ -50,8 +51,12 @@ trait RuleParser extends MacroUtils {
     if (startRules.isEmpty) {
       c.error(c.enclosingPosition, "No start-rule is defined!")
     } else if (startRules.size > 1) {
-      val startRuleNames = startRules.toList.map(grammar.nonTerminalNames).sorted
-      c.error(c.enclosingPosition, s"Multiple definitions of start-rule: ${startRuleNames.mkString(", ")}!")
+      val firstStartRule = startRules.head
+      val firstStartRuleName = grammar.nonTerminalNames(firstStartRule)
+      for (startRule <- startRules.tail) {
+        val startRulePosition  = grammar.nonTerminalPositions(startRule)
+        c.error(startRulePosition.asInstanceOf[Position], s"Start-rule is already defined ($firstStartRuleName)!")
+      }
     }
 
     grammar.startRule = startRules.head

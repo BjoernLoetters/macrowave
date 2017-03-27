@@ -20,7 +20,7 @@ class GrammarSpec extends FlatSpec with Matchers {
     )
   }
 
-  it should "not compile, if multiple start-rules are defined" in {
+  it should "not compile, if a start-rules is defined twice" in {
     illTyped(
       """
       import com.github.zenpie.macrowave._
@@ -32,7 +32,24 @@ class GrammarSpec extends FlatSpec with Matchers {
         @start val S2: Rule1[String] = dummyToken
       }
       """,
-      "Multiple definitions of start-rule: S1, S2!"
+      "Start-rule is already defined \\(S1\\)!"
+    )
+  }
+
+  it should "not compile, if a start-rules is defined thrice" in {
+    illTyped(
+      """
+      import com.github.zenpie.macrowave._
+      @grammar
+      class Parser {
+        val dummyToken: Token = token("dummy")
+
+        @start val S1: Rule1[String] = dummyToken
+        @start val S2: Rule1[String] = dummyToken
+        @start val S3: Rule1[String] = dummyToken
+      }
+      """,
+      "Start-rule is already defined \\(S1\\)!"
     )
   }
 

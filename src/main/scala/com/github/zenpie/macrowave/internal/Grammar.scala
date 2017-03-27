@@ -19,6 +19,7 @@ final class Grammar(val c: whitebox.Context) {
 
   /* positions */
 
+  private[internal] val terminalPositions = mutable.Map[TerminalId, Position]()
   private[internal] val nonTerminalPositions = mutable.Map[NonTerminalId, Position]()
 
   /* actions */

@@ -55,7 +55,7 @@ trait RuleParser extends MacroUtils {
       val firstStartRuleName = grammar.nonTerminalNames(firstStartRule)
       for (startRule <- startRules.tail) {
         val startRulePosition  = grammar.nonTerminalPositions(startRule)
-        c.error(startRulePosition.asInstanceOf[Position], s"Start-rule is already defined ($firstStartRuleName)!")
+        c.error(startRulePosition.asInstanceOf[Position], s"The start-rule is already defined ($firstStartRuleName)!")
       }
     }
 

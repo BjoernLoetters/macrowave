@@ -32,13 +32,14 @@ trait RuleParser extends MacroUtils {
 
     /* Collect defs/vals of type Token */
 
-    val whiteSpaces = mutable.Set.empty[TerminalId]
+    val whiteSpaces = mutable.ArrayBuffer.empty[TerminalId]
 
     def tokenDefinition(tree: Tree, name: TermName, tpt: Tree, value: Tree): Unit = {
       val terminalId = grammar.terminalIdProvider.next()
-      grammar.namedTerminals += ((name.toString, terminalId))
-      grammar.terminalNames  += ((terminalId, name.toString))
-      grammar.terminals      += ((terminalId, Token(regexps, value)))
+      grammar.namedTerminals    += ((name.toString, terminalId))
+      grammar.terminalNames     += ((terminalId, name.toString))
+      grammar.terminals         += ((terminalId, Token(regexps, value)))
+      grammar.terminalPositions += ((terminalId, tree.pos.asInstanceOf[grammar.Position]))
 
       if (hasAnnotation(tree, WhiteSpaceTpe)) {
         whiteSpaces += terminalId
@@ -55,8 +56,12 @@ trait RuleParser extends MacroUtils {
     if (whiteSpaces.isEmpty || whiteSpaces.size == 1) {
       grammar.whiteSpace = whiteSpaces.headOption
     } else {
-      val whiteSpaceRuleNames = whiteSpaces.toList.map(grammar.terminalNames).sorted
-      c.error(c.enclosingPosition, s"Multiple definitions of whiteSpace-token: ${whiteSpaceRuleNames.mkString(", ")}!")
+      val firstWsToken = whiteSpaces.head
+      val firstWsName = grammar.terminalNames(firstWsToken)
+      for (whiteSpace <- whiteSpaces.tail) {
+        val wsTokenPosition = grammar.terminalPositions(whiteSpace)
+        c.error(wsTokenPosition.asInstanceOf[Position], s"The white space token is already defined ($firstWsName)!")
+      }
     }
 
   }

@@ -56,6 +56,19 @@ trait RuleParser extends MacroUtils {
 
     grammar.startRule = startRules.head
 
+    /* Collect auxiliary definitions */
+
+    def auxiliaryDefinition(tree: Tree): Unit = {
+      grammar.auxiliaryDefs += tree.asInstanceOf[grammar.Tree]
+    }
+
+    stms.popsome {
+      case tree @ Import(_, _) =>
+        auxiliaryDefinition(tree)
+      case tree if tree.isDef =>
+        auxiliaryDefinition(tree)
+    }
+
   }
 
   private def ParserRule(grammar: Grammar, nonTermTpes: mutable.Map[String, Type], tree: Tree): parser.Rule = {

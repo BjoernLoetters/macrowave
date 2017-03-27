@@ -38,4 +38,8 @@ final class Grammar(val c: whitebox.Context) {
   private[internal] val terminalNames = mutable.Map[TerminalId, String]()
   private[internal] val terminals = mutable.Map[TerminalId, scanner.Rule]()
 
+  /* auxiliary definitions */
+
+  private[internal] val auxiliaryDefs = mutable.ArrayBuffer[Tree]()
+
 }

@@ -24,7 +24,7 @@ class Macrowave(val c: whitebox.Context) extends AnyRef
 
         scannerRulesFromStatements(grammar, stmList)
         parserRulesFromStatements(grammar, stmList)
-        RuleValidation.validate(grammar)
+        RuleValidation.validateParserRules(grammar)
 
         q"""$mods class $cname(...$ctors) extends $superclasses {}"""
       case x =>

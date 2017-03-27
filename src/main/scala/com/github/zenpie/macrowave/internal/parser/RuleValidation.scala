@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 object RuleValidation {
 
-  def validate(grammar: Grammar): Unit = {
+  def validateParserRules(grammar: Grammar): Unit = {
     if (!containsUselessRules(grammar)) {
       containsUnreachableRules(grammar)
     }

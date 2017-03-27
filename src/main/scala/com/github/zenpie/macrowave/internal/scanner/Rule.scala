@@ -1,8 +1,14 @@
 package com.github.zenpie.macrowave.internal.scanner
 
+import scala.collection.mutable
+
 sealed trait Rule extends Product with Serializable {
 
-  def show: String
+  def show          : String
+
+  var nullable      : Boolean          = false
+  val firstPosition : mutable.Set[Int] = mutable.Set()
+  val lastPosition  : mutable.Set[Int] = mutable.Set()
 
 }
 
@@ -38,7 +44,7 @@ object Range {
 
 }
 
-final class Range(val from: Char, val to: Char) extends Rule {
+final class Range private(val from: Char, val to: Char) extends Rule {
 
   def show = if (from == to) from + "" else s"[$from-$to]"
 
@@ -61,6 +67,9 @@ final class Range(val from: Char, val to: Char) extends Rule {
     else to
 
   override def productArity: Int = 2
+
+  val positions: Array[Int] = new Array((to - from) + 1)
+
 }
 
 case class Kleene(rule: Rule) extends Rule {
@@ -75,5 +84,7 @@ case class Kleene(rule: Rule) extends Rule {
 case object EmptyString extends Rule {
 
   def show = ""
+
+  nullable = true
 
 }

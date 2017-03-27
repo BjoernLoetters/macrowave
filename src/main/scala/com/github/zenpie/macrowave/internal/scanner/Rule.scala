@@ -1,18 +1,15 @@
 package com.github.zenpie.macrowave.internal.scanner
 
-import scala.collection.mutable
+import com.github.zenpie.macrowave.internal.ids.ScannerRuleId
 
 sealed trait Rule extends Product with Serializable {
 
-  def show          : String
-
-  var nullable      : Boolean          = false
-  val firstPosition : mutable.Set[Int] = mutable.Set()
-  val lastPosition  : mutable.Set[Int] = mutable.Set()
+  def show: String
+  val id  : ScannerRuleId
 
 }
 
-case class Concatenate(left: Rule, right: Rule) extends Rule {
+case class Concatenate(id: ScannerRuleId, left: Rule, right: Rule) extends Rule {
 
   def show = (left, right) match {
     case (_: Alternate, _: Alternate) => s"(${left.show})(${right.show})"
@@ -23,7 +20,7 @@ case class Concatenate(left: Rule, right: Rule) extends Rule {
 
 }
 
-case class Alternate(left: Rule, right: Rule) extends Rule {
+case class Alternate(id: ScannerRuleId, left: Rule, right: Rule) extends Rule {
 
   def show = left.show + "|" + right.show
 
@@ -31,27 +28,30 @@ case class Alternate(left: Rule, right: Rule) extends Rule {
 
 object Range {
 
-  def apply(from: Char, to: Char): Range =
-    new Range(from min to, from max to)
+  def apply(id: ScannerRuleId, from: Char, to: Char): Range =
+    new Range(id, from min to, from max to)
 
-  def apply(char: Char): Range =
-    new Range(char, char)
+  def apply(id: ScannerRuleId, char: Char): Range =
+    new Range(id, char, char)
 
-  def unapply(any: Any): Option[(Char, Char)] = any match {
-    case r: Range => Some((r.from, r.to))
+  def unapply(any: Any): Option[(ScannerRuleId, Char, Char)] = any match {
+    case r: Range => Some((r.id, r.from, r.to))
     case _        => None
   }
 
 }
 
-final class Range private(val from: Char, val to: Char) extends Rule {
+final class Range private(val id: ScannerRuleId, val from: Char, val to: Char) extends Rule {
 
   def show = if (from == to) from + "" else s"[$from-$to]"
+
+  def intersects(other: Range): Boolean =
+    to >= other.from && from <= other.to
 
   override def toString = s"Range($from, $to)"
 
   override def equals(other: Any): Boolean = other match {
-    case Range(f, t) => f == from && t == to
+    case Range(_, f, t) => f == from && t == to
     case _ => false
   }
 
@@ -72,7 +72,7 @@ final class Range private(val from: Char, val to: Char) extends Rule {
 
 }
 
-case class Kleene(rule: Rule) extends Rule {
+case class Kleene(id: ScannerRuleId, rule: Rule) extends Rule {
 
   def show = rule match {
     case _: Concatenate | _: Alternate => s"(${rule.show})*"
@@ -81,10 +81,8 @@ case class Kleene(rule: Rule) extends Rule {
 
 }
 
-case object EmptyString extends Rule {
+case class EmptyString(id: ScannerRuleId) extends Rule {
 
   def show = ""
-
-  nullable = true
 
 }

@@ -2,7 +2,7 @@ package com.github.zenpie.macrowave.internal.ids
 
 import scala.collection.mutable
 
-final class IdProvider[@specialized T <: Id](f: Int => T) {
+final class IdProvider[T <: Id](f: Int => T) {
 
   private var counter: Int = 0
 

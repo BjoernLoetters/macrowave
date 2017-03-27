@@ -1,6 +1,6 @@
 package com.github.zenpie.macrowave.internal
 
-import com.github.zenpie.macrowave.internal.ids.{ActionId, NonTerminalId, TerminalId, TypeId}
+import com.github.zenpie.macrowave.internal.ids._
 
 import scala.collection.mutable
 import scala.reflect.macros.whitebox
@@ -16,6 +16,7 @@ final class Grammar(val c: whitebox.Context) {
   private[internal] val typeIdProvider = new IdProvider[TypeId](new TypeId(_))
   private[internal] val nonTerminalIdProvider = new IdProvider[NonTerminalId](new NonTerminalId(_))
   private[internal] val terminalIdProvider = new IdProvider[TerminalId](new TerminalId(_))
+  private[internal] val scannerRuleIdProvider = new IdProvider[ScannerRuleId](new ScannerRuleId(_))
 
   /* positions */
 

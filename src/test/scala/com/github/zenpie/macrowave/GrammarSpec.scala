@@ -116,4 +116,59 @@ class GrammarSpec extends FlatSpec with Matchers {
     )
   }
 
+  /* unreachable rules */
+
+  it should "not compile, if it contains a unreachable rule" in {
+    illTyped(
+      """{
+      import com.github.zenpie.macrowave._
+
+      @grammar
+      class Parser {
+        val dummyToken: Token = token("dummy")
+
+        @start val S: Rule1[String] = A
+
+        def A: Rule1[String] = dummyToken
+        def B: Rule1[String] = dummyToken
+      }
+      }""",
+      "The rule 'B' isn't reachable!"
+    )
+  }
+
+  /* useless rules */
+
+  it should "not compile, if it contains a useless rule" in {
+    illTyped(
+      """{
+      import com.github.zenpie.macrowave._
+
+      @grammar
+      class Parser {
+        val dummyToken: Token = token("dummy")
+
+        @start val S: Rule1[Any] = S
+      }
+      }""",
+      "The start-rule 'S' is useless!"
+    )
+
+    illTyped(
+      """{
+      import com.github.zenpie.macrowave._
+
+      @grammar
+      class Parser {
+        val dummyToken: Token = token("dummy")
+
+        @start val S: Rule1[Any] = A
+
+        def A: Rule1[String] = A
+      }
+      }""",
+      "The rule 'A' is useless!"
+    )
+  }
+
 }

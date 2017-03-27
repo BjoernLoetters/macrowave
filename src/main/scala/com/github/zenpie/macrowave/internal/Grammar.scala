@@ -42,12 +42,12 @@ final class Grammar(val c: whitebox.Context) {
 
   private[internal] val namedTerminals = mutable.Map[String, TerminalId]()
   private[internal] val terminalNames = mutable.Map[TerminalId, String]()
+  private[internal] val terminals = mutable.Map[TerminalId, scanner.Rule]()
 
   private[internal] var whiteSpace = Option.empty[TerminalId]
 
   /* auxiliary definitions */
 
-  private[internal] val terminals = mutable.Map[TerminalId, scanner.Rule]()
   private[internal] val auxiliaryDefs = mutable.ArrayBuffer[Tree]()
 
 }

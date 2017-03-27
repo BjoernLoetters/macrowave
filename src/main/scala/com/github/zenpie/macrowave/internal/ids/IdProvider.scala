@@ -17,7 +17,7 @@ final class IdProvider[T <: Id](f: Int => T) {
     def update(key: T, value: U): Unit
   }
 
-  def model[U](default: T => U): Table[U] = new Table[U] {
+  def dataTable[U](default: T => U): Table[U] = new Table[U] {
     private val data = mutable.ArrayBuffer[U]()
 
     private def ensure(key: T): Int = {

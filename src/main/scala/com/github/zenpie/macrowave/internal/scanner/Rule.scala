@@ -67,9 +67,7 @@ final class Range private(val id: ScannerRuleId, val from: Char, val to: Char) e
     else to
 
   override def productArity: Int = 2
-
-  val positions: Array[Int] = new Array((to - from) + 1)
-
+  
 }
 
 case class Kleene(id: ScannerRuleId, rule: Rule) extends Rule {

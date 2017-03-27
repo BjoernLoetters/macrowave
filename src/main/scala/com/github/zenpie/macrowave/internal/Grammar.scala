@@ -8,6 +8,7 @@ import scala.reflect.macros.whitebox
 final class Grammar(val c: whitebox.Context) {
 
   private[internal] type Tree = c.universe.Tree
+  private[internal] type Position = c.universe.Position
 
   /* IDs */
 
@@ -15,6 +16,11 @@ final class Grammar(val c: whitebox.Context) {
   private[internal] val typeIdProvider = new IdProvider[TypeId](new TypeId(_))
   private[internal] val nonTerminalIdProvider = new IdProvider[NonTerminalId](new NonTerminalId(_))
   private[internal] val terminalIdProvider = new IdProvider[TerminalId](new TerminalId(_))
+
+  /* positions */
+
+  private[internal] val terminalPositions = mutable.Map[TerminalId, Position]()
+  private[internal] val nonTerminalPositions = mutable.Map[NonTerminalId, Position]()
 
   /* actions */
 

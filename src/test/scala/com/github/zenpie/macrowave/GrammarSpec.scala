@@ -146,8 +146,6 @@ class GrammarSpec extends FlatSpec with Matchers {
 
       @grammar
       class Parser {
-        val dummyToken: Token = token("dummy")
-
         @start val S: Rule1[Any] = S
       }
       }""",
@@ -160,8 +158,6 @@ class GrammarSpec extends FlatSpec with Matchers {
 
       @grammar
       class Parser {
-        val dummyToken: Token = token("dummy")
-
         @start val S: Rule1[Any] = A
 
         def A: Rule1[String] = A

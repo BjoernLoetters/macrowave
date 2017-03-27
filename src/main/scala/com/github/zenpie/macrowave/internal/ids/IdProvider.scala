@@ -1,6 +1,6 @@
-package com.github.zenpie.macrowave.internal
+package com.github.zenpie.macrowave.internal.ids
 
-class IdProvider[@specialized T <: AnyVal](f: Int => T) {
+class IdProvider[@specialized T <: Id](f: Int => T) {
 
   private var counter: Int = 0
 

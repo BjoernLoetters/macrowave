@@ -53,6 +53,7 @@ object RuleValidation {
     def isGenerating(rule: parser.Rule): Boolean = rule match {
       case parser.Concatenate(l, r, _) => isGenerating(l) && isGenerating(r)
       case parser.Alternate(l, r, _) => isGenerating(l) || isGenerating(r)
+      case parser.Transform(r, _, _) => isGenerating(r)
       case parser.PClosure(r, _) => isGenerating(r)
       case parser.NonTerminal(name, _) =>
         val referencedRuleId = namedNonTerminals(name)

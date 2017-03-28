@@ -165,6 +165,74 @@ class GrammarSpec extends FlatSpec with Matchers {
       }""",
       "The rule 'A' is useless!"
     )
+
+    illTyped(
+      """{
+      import com.github.zenpie.macrowave._
+
+      @grammar
+      class Parser {
+        val dummyToken: Token = token("dummy")
+
+        @start val S: Rule1[Any] = S ~ A ^^ ((s, a) => ())
+
+        def A: Rule1[String] = dummyToken
+      }
+      }""",
+      "The start-rule 'S' is useless!"
+    )
+
+    illTyped(
+      """{
+      import com.github.zenpie.macrowave._
+
+      @grammar
+      class Parser {
+        val dummyToken: Token = token("dummy")
+
+        @start val S: Rule1[Any] = A
+
+        def A: Rule1[Any] = A ~ B ^^ ((a, b) => ())
+        def B: Rule1[String] = dummyToken
+      }
+      }""",
+      "The rule 'A' is useless!"
+    )
+
+    illTyped(
+      """{
+      import com.github.zenpie.macrowave._
+
+      @grammar
+      class Parser {
+        val dummyToken: Token = token("dummy")
+
+        @start val S: Rule[Any :: List[Any] :: HNil] = A +
+        def A: Rule1[Any] = A
+      }
+      }""",
+      "The rule 'A' is useless!"
+    )
+  }
+
+  it should "compile, if it doesn't contain a useless rule" in {
+      import com.github.zenpie.macrowave._
+
+    @grammar
+    class Parser1 {
+      val dummyToken: Token = token("dummy")
+
+      @start val S: Rule1[Any] = A *
+      def A: Rule1[Any] = dummyToken
+    }
+
+    @grammar
+    class Parser2 {
+      val dummyToken: Token = token("dummy")
+
+      @start val S: Rule1[Any] = A ?
+      def A: Rule1[Any] = dummyToken
+    }
   }
 
 }

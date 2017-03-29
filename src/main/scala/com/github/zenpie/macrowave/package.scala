@@ -13,6 +13,7 @@ package object macrowave {
   val HNil = shapeless.HNil
 
   type Prepend[P <: HList, S <: HList] = shapeless.ops.hlist.Prepend[P, S]
+  type SingletonRule[T] = com.github.zenpie.macrowave.support.SingletonRule[T]
 
   type Rule1[+T] = Rule[T :: HNil]
 

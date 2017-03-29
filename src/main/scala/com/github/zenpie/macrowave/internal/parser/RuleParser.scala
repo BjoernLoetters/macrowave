@@ -112,15 +112,15 @@ trait RuleParser extends MacroUtils {
         val x   = helper(r)
         parser.Transform(x, aid, tid)
 
-      case q"($r).*[$rTpt]" =>
+      case q"($r).*[$rTpt]($ev)" =>
         val tid = typeOf(tree)
         val x   = helper(r)
         parser.Kleene(x, tid)
-      case q"($r).+[$rTpt]" =>
+      case q"($r).+[$rTpt]($ev)" =>
         val tid = typeOf(tree)
         val x   = helper(r)
         parser.PClosure(x, tid)
-      case q"($r).?[$rTpt]" =>
+      case q"($r).?[$rTpt]($ev)" =>
         val tid = typeOf(tree)
         val x   = helper(r)
         parser.Optional(x, tid)

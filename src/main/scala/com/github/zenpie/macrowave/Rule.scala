@@ -12,12 +12,12 @@ sealed abstract class Rule[+T <: HList] {
 
 
   @compileTimeOnly("Calls to method '*' have to be inside a macro invocation!")
-  def *[V >: T <: HList] : Rule[List[V] :: HNil] = compileTime
+  def *[V >: T <: HList](implicit S: SingletonRule[V]) : Rule[List[S.Out] :: HNil] = compileTime
 
   @compileTimeOnly("Calls to method '+' have to be inside a macro invocation!")
-  def +[V >: T <: HList] : Rule[V :: List[V] :: HNil] = compileTime
+  def +[V >: T <: HList](implicit S: SingletonRule[V]) : Rule[S.Out :: List[S.Out] :: HNil] = compileTime
 
   @compileTimeOnly("Calls to method '?' have to be inside a macro invocation!")
-  def ?[V >: T <: HList] : Rule[Option[V] :: HNil] = compileTime
+  def ?[V >: T <: HList](implicit S: SingletonRule[V]) : Rule[Option[S.Out] :: HNil] = compileTime
 
 }

@@ -7,6 +7,39 @@ class GrammarSpec extends FlatSpec with Matchers {
 
   behavior of "A grammar"
 
+  /* operations and rules */
+
+  it should "compile, if it is valid" in {
+    import com.github.zenpie.macrowave._
+    import scala.language.postfixOps
+
+    @grammar class Parser {
+      val DIGIT  = com.github.zenpie.macrowave.regex("[0-9]")
+
+      val NUMBER = token(DIGIT +)
+
+      @start def S: Rule1[String] = (
+          ExplicitRuleType
+        | InferredRuleType
+        | Epsilon
+        | Concat ^^ (_ + _)
+        | Alternative
+        | Optional ^^ (_.toString)
+        | PositiveClosue ^^ ((a, b) => a.toString + b.toString)
+        | Kleene ^^ (_.toString)
+      )
+
+      def ExplicitRuleType: Rule1[String] = NUMBER
+      def InferredRuleType = singletonRule(NUMBER)
+      def Epsilon: Rule1[String] = epsilon ^^ (() => "empty")
+      def Concat: Rule[String :: String :: HNil] = NUMBER ~ NUMBER
+      def Alternative: Rule[String :: HNil] = NUMBER | NUMBER
+      def Optional: Rule[Option[String :: HNil] :: HNil] = NUMBER ?
+      def PositiveClosue: Rule[(String :: HNil) :: List[String :: HNil] :: HNil] = NUMBER +
+      def Kleene: Rule[List[String :: HNil] :: HNil] = NUMBER *
+    }
+  }
+
   /* start-rules */
 
   it should "not compile, if no start-rule is defined" in {

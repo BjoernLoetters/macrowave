@@ -20,13 +20,6 @@ package object macrowave {
   def compileTime: Nothing = throw new UnsupportedOperationException("")
 
 
-  @compileTimeOnly("Calls to function 'token' have to be inside a macro invocation!")
-  implicit def token(regex: RegExp): Token = compileTime
-
-  @compileTimeOnly("Calls to function 'singletonRule' have to be inside a macro invocation!")
-  implicit def singletonRule(token: Token): Rule1[String] = compileTime
-
-
   @compileTimeOnly("Calls to function 'literal' have to be inside a macro invocation!")
   implicit def literal(string: String): RegExp = compileTime
 
@@ -35,6 +28,17 @@ package object macrowave {
 
   @compileTimeOnly("Calls to function 'regex' have to be inside a macro invocation!")
   implicit def regex(regex: Regex): RegExp = compileTime
+
+
+  @compileTimeOnly("Calls to function 'token' have to be inside a macro invocation!")
+  implicit def token(regex: RegExp): Token = compileTime
+
+
+  @compileTimeOnly("Calls to function 'singletonRule' have to be inside a macro invocation!")
+  implicit def singletonRule(token: Token): Rule1[String] = compileTime
+
+  @compileTimeOnly("Calls to function 'epsilon' have to be inside a macro invocation!")
+  def epsilon: Rule[HNil] = compileTime
 
   /*
      TODO: Let SBT do the (here) hardcoded code-generation

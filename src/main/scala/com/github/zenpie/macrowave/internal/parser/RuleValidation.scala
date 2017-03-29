@@ -18,6 +18,7 @@ object RuleValidation {
     val reachableNonTerminals = mutable.Set.empty[NonTerminalId]
 
     def helper(rule: parser.Rule): Unit = rule match {
+      case parser.Epsilon(_) => ()
       case parser.Concatenate(l, r, _) => helper(l); helper(r)
       case parser.Alternate(l, r, _) => helper(l); helper(r)
       case parser.PClosure(r, _) => helper(r)
@@ -51,6 +52,7 @@ object RuleValidation {
     val generating = mutable.Set.empty[NonTerminalId]
 
     def isGenerating(rule: parser.Rule): Boolean = rule match {
+      case parser.Epsilon(_) => true
       case parser.Concatenate(l, r, _) => isGenerating(l) && isGenerating(r)
       case parser.Alternate(l, r, _) => isGenerating(l) || isGenerating(r)
       case parser.PClosure(r, _) => isGenerating(r)

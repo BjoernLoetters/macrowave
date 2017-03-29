@@ -4,7 +4,7 @@ import scala.annotation.compileTimeOnly
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 
-package object macrowave {
+package object macrowave extends RuleActions {
 
   type HList = shapeless.HList
   type ::[H, T <: HList] = shapeless.::[H, T]

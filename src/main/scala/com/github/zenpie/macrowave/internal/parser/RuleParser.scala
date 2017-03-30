@@ -125,6 +125,8 @@ trait RuleParser extends MacroUtils {
         val x   = helper(r)
         parser.Optional(x, tid)
 
+      case q"$prefix.epsilon" if isMacrowavePackageObj(prefix) =>
+        parser.Epsilon(typeOf(tree))
       case q"$_.this.$nonTerminalName" =>
         val ntName = nonTerminalName.toString()
         val ntTpe  = nonTermTpes(ntName)

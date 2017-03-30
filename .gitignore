@@ -2,6 +2,7 @@
 # Custom
 target
 project/*
+!project/*.scala
 !project/plugins.sbt
 
 # Created by https://www.gitignore.io/api/windows,macos,osx,linux,batch,intellij,scala,java,eclipse,ensime,emacs,vim

@@ -1,7 +1,5 @@
 package com.github.zenpie.macrowave.internal
 
-import java.util.LinkedList
-
 import scala.reflect.macros.whitebox
 
 private[internal] trait MacroUtils {
@@ -15,15 +13,24 @@ private[internal] trait MacroUtils {
   private[internal] val SingletonRuleTpe = typeOf[com.github.zenpie.macrowave.Rule[
     com.github.zenpie.macrowave.::[String, com.github.zenpie.macrowave.HNil]]]
 
+  private[internal] val RuleTpe = typeOf[com.github.zenpie.macrowave.Rule[_]]
+  private[internal] val Rule1Tpe = typeOf[com.github.zenpie.macrowave.Rule1[_]]
+
   private[internal] val validRuleActions = ((0 to 22) map (n => s"RuleAction$n")).toSet
 
-  private[internal] def isRuleTpe(tree: Tree): Boolean = tree match {
-    case tq"$prefix.Rule[$_]" => isMacrowavePackageObj(prefix)
-    case tq"$prefix.Rule1[$_]" => isMacrowavePackageObj(prefix)
-    case tq"Rule[$_]" => true
-    case tq"Rule1[$_]" => true
-    case _ => false
-  }
+  private[internal] def isRuleTpe(tree: Tree): Boolean =
+    if (!tree.isType) false else {
+      val tpe = tree.tpe
+      val tpeArgs = tpe.typeArgs
+
+      val apRule = appliedType(RuleTpe, tpeArgs)
+      val apRule1 = appliedType(Rule1Tpe, tpeArgs)
+
+      val isRule = tpe <:< apRule
+      val isRule1 = tpe <:< apRule1
+
+      isRule || isRule1
+    }
 
   private[internal] def isMacrowavePackageObj(prefix: Tree): Boolean =
     prefix match {

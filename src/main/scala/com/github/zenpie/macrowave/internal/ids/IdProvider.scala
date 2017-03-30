@@ -25,7 +25,7 @@ final class IdProvider[T <: Id](f: Int => T) {
 
     private def ensure(key: T): Int = {
       val index = key.value
-      while (index >= data.size) data += default(key)
+      while (index >= data.size) data += default(f(data.size))
       index
     }
 

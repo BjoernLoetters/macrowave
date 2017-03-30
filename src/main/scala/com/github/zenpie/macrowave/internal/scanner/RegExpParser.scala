@@ -23,64 +23,73 @@ final class RegExpParser(grammar: Grammar) extends RegexParsers with ImplicitCon
   def parse(source: String): Try[Rule] =
     if (source.isEmpty) util.Success(EmptyString(id()))
     else parseAll(alternative, new StringReader(source)) match {
-      case Success(result, _) => util.Success(result)
+      case Success(result, _) => util.Success(result())
       case NoSuccess(error, rest) => util.Failure(new RuntimeException(
         s"$error\n${rest.pos.longString}"))
     }
 
-  private def alternative: Parser[Rule] =
+  private def alternative: Parser[() => Rule] =
     concatenation ~ rep("(?<!\\\\)\\|".r ~> concatenation) ^^ {
       case left ~ alternatives =>
-        alternatives.foldLeft(left)(Alternate(id(), _, _))
+        () => alternatives.foldLeft(left()) {
+          case (acc, ele) => Alternate(id(), acc, ele())
+        }
     }
 
-  private def concatenation: Parser[Rule] =
-    rep1(postOp) ^^ { case hd :: tl => tl.foldLeft(hd) {
-      case (acc, next) => Concatenate(id(), acc, next)
-    } case _ => sys.error("internal error: rep1 should not return the empty list") }
+  private def concatenation: Parser[() => Rule] =
+    rep1(postOp) ^^ {
+      case hd :: tl =>
+        () => tl.foldLeft(hd()) {
+          case (acc, next) => Concatenate(id(), acc, next())
+        }
+      case _ => sys.error("internal error: rep1 should not return the empty list")
+    }
 
-  private def postOp: Parser[Rule] =
+  private def repeat[T](n: Int)(elem: => T): Seq[T] =
+    Seq.fill[T](n)(elem)
+
+  private def postOp: Parser[() => Rule] =
     value ~ rep("(?<!\\\\)(\\?|\\+|\\*|(\\{\\s*([0-9]+|[0-9]+\\s*,|,\\s*[0-9]+|[0-9]+\\s*,\\s*[0-9]+)\\s*(?<!\\\\)\\}))".r) ^^ { case value ~ ops =>
-      ops.foldLeft(value: Rule) {
-        case (acc, "?") => Alternate(id(), EmptyString(id()), acc)
-        case (acc, "+") => Concatenate(id(), acc, Kleene(id(), acc))
-        case (acc, "*") => Kleene(id(), acc)
+      ops.foldLeft(value: () => Rule) {
+        case (acc, "?") => () => Alternate(id(), EmptyString(id()), acc())
+        case (acc, "+") => () => Concatenate(id(), acc(), Kleene(id(), acc()))
+        case (acc, "*") => () => Kleene(id(), acc())
         case (acc, quantifier) =>
           val cleaned = quantifier.replaceAll("(\\s|\\{|\\})+", "")
           if (cleaned.startsWith(",")) {
             /* 0 to m */
             val max = cleaned.replaceAll(",", "").toInt
-            (0 until max).map(_ => Alternate(id(), EmptyString(id()), acc))
+            () => repeat(max)(Alternate(id(), EmptyString(id()), acc()))
               .foldLeft(EmptyString(id()): Rule)(Concatenate(id(), _, _))
           } else if (cleaned.endsWith(",")) {
             /* at least n */
             val min = cleaned.replaceAll(",", "").toInt
-            (0 until min).map(_ => acc)
-              .foldLeft(Kleene(id(), acc): Rule)(Concatenate(id(), _, _))
+            () => repeat(min)(acc())
+              .foldLeft(Kleene(id(), acc()): Rule)(Concatenate(id(), _, _))
           } else if (cleaned.contains(",")) {
             /* n to m */
             val Array(a, b) = cleaned.split(",").map(_.toInt)
             val (n, m) = (Math.min(a, b), Math.max(a, b))
-            (0 until n).map(_ => acc).foldLeft(
-              (n until m).map(_ => Alternate(id(), EmptyString(id()), acc))
+            () => repeat(n)(acc()).foldLeft(
+              repeat(m - n)(Alternate(id(), EmptyString(id()), acc()))
                 .foldLeft(EmptyString(id()): Rule)(Concatenate(id(), _, _))
             )(Concatenate(id(), _, _))
           } else {
             /* exactly n */
-            (0 until cleaned.toInt).map(_ => acc)
+            () => repeat(cleaned.toInt)(acc())
               .foldLeft(EmptyString(id()): Rule)(Concatenate(id(), _, _))
           }
       }
     }
 
-  private def value: Parser[Rule] = (
+  private def value: Parser[() => Rule] = (
       charClass
-    | character(reserved) ^^ { case (from, to) => Range(id(), from, to) }
+    | character(reserved) ^^ { case (from, to) => () => Range(id(), from, to) }
     | "(?<!\\\\)\\(".r ~> alternative <~ "(?<!\\\\)\\)".r
-    | "(?<!\\\\)\\.".r ^^^ Range(id(), Char.MinValue, Char.MaxValue)
+    | "(?<!\\\\)\\.".r ^^^ (() => Range(id(), Char.MinValue, Char.MaxValue))
   )
 
-  private def charClass: Parser[Rule] =
+  private def charClass: Parser[() => Rule] =
     "(?<!\\\\)\\[\\^?-?".r ~ rep(charComponent) ~ "-?(?<!\\\\)\\]".r ^^ {
       case start ~ components ~ end =>
         val ranges =
@@ -89,8 +98,8 @@ final class RegExpParser(grammar: Grammar) extends RegexParsers with ImplicitCon
         val input =
           if (start.length > 1 && start.charAt(1) == '^') scanner.rangeComplement(ranges)
           else ranges
-        if (input.isEmpty) EmptyString(id())
-        else input.map { case (from, to) => Range(id(), from, to) }
+        if (input.isEmpty) () => EmptyString(id())
+        else () => input.map { case (from, to) => Range(id(), from, to) }
           .reduceLeft[Rule](Alternate(id(), _, _))
     }
 

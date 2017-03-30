@@ -55,11 +55,42 @@ object RuleValidation {
       case parser.Epsilon(_) => true
       case parser.Concatenate(l, r, _) => isGenerating(l) && isGenerating(r)
       case parser.Alternate(l, r, _) => isGenerating(l) || isGenerating(r)
-      case parser.PClosure(r, _) => isGenerating(r)
+      case parser.Transform(r, _, _) => isGenerating(r)
+      case parser.PClosure(r, _) =>
+        /*
+         * S -> A +
+         * ------------------------------------
+         * S  -> A ~ A'
+         * A' -> A ~ A' | epsilon
+         *
+         * the rule S has to parse at least one A,
+         * this is why the rule S is generating iff A is generating
+         */
+        isGenerating(r)
+      case parser.Kleene(_, _) =>
+        /*
+         * S -> A *
+         * ------------------------------------
+         * S  -> A'
+         * A' -> A ~ A' | epsilon
+         *
+         * the rule S always generates epsilon
+         */
+        true
+      case parser.Optional(_, _) =>
+        /*
+         * S -> A ?
+         * ------------------------------------
+         * S  -> A'
+         * A' -> A | epsilon
+         *
+         * the rule S always generates epsilon
+         */
+        true
       case parser.NonTerminal(name, _) =>
         val referencedRuleId = namedNonTerminals(name)
         generating.contains(referencedRuleId)
-      case _ => true
+      case parser.Terminal(_, _) => true
     }
 
     def isUselessRule(nonTerminalId: NonTerminalId): Boolean = {

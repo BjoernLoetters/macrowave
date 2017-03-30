@@ -20,3 +20,8 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5"
 )
 
+lazy val generateRuleActions = taskKey[Seq[File]]("Generates the RuleAction boilerplate mixin")
+
+generateRuleActions := RuleActionBoilerplate.generate((sourceManaged in Compile).value)
+
+(sourceGenerators in Compile) += generateRuleActions.taskValue

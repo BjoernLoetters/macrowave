@@ -14,3 +14,4 @@ case class Optional(rule: Rule, tpe: TypeId) extends Rule
 case class Transform(rule: Rule, action: ActionId, tpe: TypeId) extends Rule
 case class Terminal(name: String, tpe: TypeId) extends Rule
 case class NonTerminal(name: String, tpe: TypeId) extends Rule
+case class Epsilon(tpe: TypeId) extends Rule

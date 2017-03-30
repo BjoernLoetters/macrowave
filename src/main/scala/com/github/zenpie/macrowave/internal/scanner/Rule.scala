@@ -2,6 +2,9 @@ package com.github.zenpie.macrowave.internal.scanner
 
 import com.github.zenpie.macrowave.internal.ids.ScannerRuleId
 
+import scala.annotation.switch
+import scala.util.hashing.MurmurHash3
+
 sealed trait Rule extends Product with Serializable {
 
   def show: String
@@ -48,10 +51,12 @@ final class Range private(val id: ScannerRuleId, val from: Char, val to: Char) e
   def intersects(other: Range): Boolean =
     to >= other.from && from <= other.to
 
-  override def toString = s"Range($from, $to)"
+  override def toString =
+    if (from == to) s"Range($id,$from)"
+    else s"Range($id,$from,$to)"
 
   override def equals(other: Any): Boolean = other match {
-    case Range(_, f, t) => f == from && t == to
+    case Range(i, f, t) => f == from && t == to && i == id
     case _ => false
   }
 
@@ -59,15 +64,17 @@ final class Range private(val id: ScannerRuleId, val from: Char, val to: Char) e
     that.isInstanceOf[Range]
 
   override def hashCode(): Int =
-    31 * Character.hashCode(from) + 31 * Character.hashCode(to)
+    MurmurHash3.productHash(this)
 
-  override def productElement(n: Int): Any =
-    if (n < 0 || n > 1) throw new IndexOutOfBoundsException
-    else if (n == 0) from
-    else to
+  override def productElement(n: Int): Any = (n: @switch) match {
+    case 0 => id
+    case 1 => from
+    case 2 => to
+    case _ => throw new IndexOutOfBoundsException
+  }
 
-  override def productArity: Int = 2
-  
+  override def productArity: Int = 3
+
 }
 
 case class Kleene(id: ScannerRuleId, rule: Rule) extends Rule {

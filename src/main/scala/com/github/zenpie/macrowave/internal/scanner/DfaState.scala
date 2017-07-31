@@ -1,30 +1,41 @@
-package com.github.zenpie.macrowave.internal
+package com.github.zenpie.macrowave.internal.scanner
 
 import java.util
 import java.util.ConcurrentModificationException
 
+import com.github.zenpie.macrowave.internal.scanner
+
 import scala.collection.mutable.Iterable
 import scala.util.hashing.MurmurHash3
 
-object IntSet {
+object DfaState {
 
-  def apply(values: Int*): IntSet = {
-    val result = new IntSet(values.length + 16)
+  def apply(values: Int*): DfaState = {
+    val result = new DfaState(values.length + 16)
     result ++= values
     result
   }
 
-  def empty: IntSet = new IntSet(16)
+  def empty: DfaState = new DfaState(16)
 
 }
 
-final class IntSet(capacity: Int) extends Iterable[Int] {
+final class DfaState(capacity: Int) extends Iterable[Int] {
+  private var _action: Action = NoAction
   private var data = new Array[Int](capacity)
   private var size_ = 0
 
+  def updateAction(action: Action): Unit = (this._action, action) match {
+    case (NoAction, _)                                         => this._action = action
+    case (TokenAction(a), TokenAction(b)) if b.value < a.value => this._action = action
+    case _                                                     => ()
+  }
+
+  def action = _action
+
   override def size = size_
 
-  def +=(value: Int): IntSet.this.type = {
+  def +=(value: Int): DfaState.this.type = {
     var i = util.Arrays.binarySearch(data, 0, size_, value)
     if (i < 0) {
       i += 1
@@ -44,12 +55,12 @@ final class IntSet(capacity: Int) extends Iterable[Int] {
     this
   }
 
-  def ++=(values: TraversableOnce[Int]): IntSet.this.type = {
+  def ++=(values: TraversableOnce[Int]): DfaState.this.type = {
     values.foreach(this.+=)
     this
   }
 
-  def -=(value: Int): IntSet.this.type = {
+  def -=(value: Int): DfaState.this.type = {
     val i = util.Arrays.binarySearch(data, 0, size_, value)
     if (i >= 0) {
       System.arraycopy(data, i + 1, data, i, size_ - (i + 1))
@@ -71,10 +82,10 @@ final class IntSet(capacity: Int) extends Iterable[Int] {
     MurmurHash3.unorderedHash(this)
 
   override def toString(): String =
-    mkString("IntSet(", ",", ")")
+    mkString("DfaState(", ",", ")")
 
   override def equals(other: Any): Boolean = other match {
-    case s: IntSet =>
+    case s: DfaState =>
       s.size == this.size &&
       s.forall(this.contains)
     case _ => false
@@ -86,10 +97,10 @@ final class IntSet(capacity: Int) extends Iterable[Int] {
   override def iterator: Iterator[Int] = new Iterator[Int] {
     private var i = 0
 
-    override def hasNext: Boolean = i < IntSet.this.size
+    override def hasNext: Boolean = i < DfaState.this.size
 
     override def next(): Int = {
-      if (i >= IntSet.this.size) {
+      if (i >= DfaState.this.size) {
         throw new ConcurrentModificationException()
       }
       val r = data(i)

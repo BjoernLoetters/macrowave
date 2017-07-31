@@ -1,7 +1,7 @@
 package com.github.zenpie.macrowave.internal.scanner
 
-import com.github.zenpie.macrowave.internal.{Grammar, IntSet}
-import com.github.zenpie.macrowave.internal.ids.{ScannerRuleId, Table, TerminalId}
+import com.github.zenpie.macrowave.internal.Grammar
+import com.github.zenpie.macrowave.internal.ids.{ScannerRuleId, Table}
 
 import scala.collection._
 import scala.collection.mutable.ArrayBuffer
@@ -13,10 +13,6 @@ case class FiniteAutomaton(
 )
 
 object FiniteAutomaton {
-
-  private sealed trait Action
-  private case object NoAction extends Action
-  private case class TokenAction(id: TerminalId) extends Action
 
   private final type RuleTable[T] = Table[ScannerRuleId, T]
 
@@ -32,6 +28,7 @@ object FiniteAutomaton {
 
     for ((id, rule) <- grammar.terminals) {
       if (!grammar.whiteSpace.contains(id)) {
+        println("entering action for '" + rule.show + "' (" + rule + "): " + TokenAction(id))
         actions(rule.id) = TokenAction(id)
       }
     }
@@ -39,15 +36,19 @@ object FiniteAutomaton {
     val combined = grammar.terminals.values.reduceLeft(Alternate(grammar.scannerRuleIdProvider.next(), _, _))
     println(combined)
 
-    val (dataSets, follow, lookup) = collect(grammar, combined)
+    val (dataSets, follow, lookup) = collect(grammar, combined, actions)
+
+    //val (dataSets, follow, lookup) = collect(grammar, combined, actions)
     val (states, finals, sigma) = construct(combined, dataSets, follow, lookup)
+
+    printASCIITable(states, sigma, finals)
 
     minimize(states, finals, sigma, actions)
   }
 
-  private def minimize(states: Seq[IntSet],
-                       finals: IntSet,
-                       sigma: mutable.Map[IntSet, mutable.Map[IntRange, IntSet]],
+  private def minimize(states: Seq[DfaState],
+                       finals: DfaState,
+                       sigma: mutable.Map[DfaState, mutable.Map[IntRange, DfaState]],
                        actions: RuleTable[Action]): FiniteAutomaton = {
     val size = states.size
     def gaussianSum(n: Int) = ((n * n) + n) >> 1
@@ -65,7 +66,11 @@ object FiniteAutomaton {
       while (y < x) {
         if (finals.contains(x) != finals.contains(y)) {
           set(x, y)
-        } /* TODO: if states(x) and states(y) have an action => mark them */
+        } else if (states(x).action != NoAction || states(y).action != NoAction) {
+          println("state " + x + " or state " + y + " do have an action")
+          /* TODO: if states(x) and states(y) have an action => mark them */
+          set(x, y)
+        }
         y += 1
       }
       x += 1
@@ -106,8 +111,8 @@ object FiniteAutomaton {
       }
     } while (changed)
 
-    val equivClassMapping = new Array[mutable.Set[IntSet]](size)
-    val equivClasses = ArrayBuffer[mutable.Set[IntSet]]()
+    val equivClassMapping = new Array[mutable.Set[DfaState]](size)
+    val equivClasses = ArrayBuffer[mutable.Set[DfaState]]()
     x = 0
     while (x < size) {
       y = 0
@@ -151,7 +156,8 @@ object FiniteAutomaton {
     FiniteAutomaton(table, 0, accepting)
   }
 
-  private def printASCIITable(states: Seq[IntSet], sigma: mutable.Map[IntSet, mutable.Map[IntRange, IntSet]]): Unit = {
+  private def printASCIITable(states: Seq[DfaState], sigma: mutable.Map[DfaState, mutable.Map[IntRange, DfaState]], finals: DfaState): Unit = {
+    println()
     print("  ")
     for (c <- 32 until 127) {
       print(c.toChar + " ")
@@ -167,17 +173,23 @@ object FiniteAutomaton {
       }
       println()
     }
+    println("=" * 10 + " actions " + "=" * 10)
+    for ((state, index) <- states.zipWithIndex) {
+      val yesno = if (finals.contains(index)) "yes" else "no"
+      println(s"state $index (accepting: $yesno): ${state.action}")
+    }
+    println()
   }
 
   private case class IntRange(from: Int, to: Int)
-  private case class DataSet(var nullable: Boolean, firstPos: IntSet, lastPos: IntSet)
+  private case class DataSet(var nullable: Boolean, firstPos: DfaState, lastPos: DfaState)
 
-  private def construct(rule: Rule, dataSets: RuleTable[DataSet], follow: mutable.Map[Int, IntSet], lookup: mutable.Map[Int, IntRange]):
-    (Seq[IntSet], IntSet, mutable.Map[IntSet, mutable.Map[IntRange, IntSet]]) = {
-    val unmarked = mutable.Queue[IntSet](dataSets(rule.id).firstPos)
-    val marked   = ArrayBuffer[IntSet]()
-    val finals   = IntSet.empty
-    val sigma    = mutable.Map[IntSet, mutable.Map[IntRange, IntSet]]()
+  private def construct(rule: Rule, dataSets: RuleTable[DataSet], follow: mutable.Map[Int, DfaState], lookup: mutable.Map[Int, IntRange]):
+    (Seq[DfaState], DfaState, mutable.Map[DfaState, mutable.Map[IntRange, DfaState]]) = {
+    val unmarked = mutable.Queue[DfaState](dataSets(rule.id).firstPos)
+    val marked   = ArrayBuffer[DfaState]()
+    val finals   = DfaState.empty
+    val sigma    = mutable.Map[DfaState, mutable.Map[IntRange, DfaState]]()
 
     while (unmarked.nonEmpty) {
       val state = unmarked.dequeue()
@@ -186,11 +198,15 @@ object FiniteAutomaton {
 
       for (position <- state) {
         val range = lookup(position)
+
+        // TODO: do we need the end marker? each rule should have an action associated
         if (range.from == -1 && range.to == -1) {
           /* final state */
           finals += (marked.size - 1)
+          println("found final state (state " + (marked.size - 1) + "): " + marked.last)
         } else {
-          edges.getOrElseUpdate(range, IntSet.empty) ++= follow.getOrElseUpdate(position, IntSet.empty)
+          edges.getOrElseUpdate(range, DfaState.empty) ++= follow.getOrElseUpdate(position, DfaState.empty)
+          edges(range).updateAction(follow(position).action)
         }
       }
 
@@ -204,15 +220,20 @@ object FiniteAutomaton {
     (marked, finals, sigma)
   }
 
-  private def collect(grammar: Grammar, rule: Rule): (RuleTable[DataSet], mutable.Map[Int, IntSet], mutable.Map[Int, IntRange]) = {
-    val dataSets = grammar.scannerRuleIdProvider.dataTable[DataSet](_ => DataSet(nullable = false, IntSet.empty, IntSet.empty))
-    val follow = mutable.Map[Int, IntSet]()
+  private def collect(grammar: Grammar, rule: Rule, actions: RuleTable[Action]): (RuleTable[DataSet], mutable.Map[Int, DfaState], mutable.Map[Int, IntRange]) = {
+    val dataSets = grammar.scannerRuleIdProvider.dataTable[DataSet](_ => DataSet(nullable = false, DfaState.empty, DfaState.empty))
+    val follow = mutable.Map[Int, DfaState]()
     val lookup = mutable.Map[Int, IntRange]()
     var position = 0
 
     def helper(rule: Rule): Unit = rule match {
       case Alternate(id, l, r) =>
-        helper(l); helper(r)
+
+        println("[ALTERNATIVE] left")
+        helper(l)
+        println("[ALTERNATIVE] right")
+        helper(r)
+
         val a = dataSets(id)
         val b = dataSets(l.id)
         val c = dataSets(r.id)
@@ -222,6 +243,13 @@ object FiniteAutomaton {
         a.firstPos ++= c.firstPos
         a.lastPos  ++= b.lastPos
         a.lastPos  ++= c.lastPos
+
+        println("[ALTERNATIVE] updating action of " + a.firstPos + ": " + actions(id))
+        println("[ALTERNATIVE] updating action of " + a.lastPos + ": " + actions(id))
+
+        a.firstPos.updateAction(actions(id))
+        a.lastPos.updateAction(actions(id))
+
 
       case Concatenate(id, l, r) =>
         helper(l); helper(r)
@@ -239,8 +267,15 @@ object FiniteAutomaton {
           a.lastPos ++= b.lastPos
         }
 
+        println("[CONCATENATION] updating action of " + a.firstPos + ": " + actions(id))
+        println("[CONCATENATION] updating action of " + a.lastPos + ": " + actions(id))
+
+        a.firstPos.updateAction(actions(id))
+        a.lastPos.updateAction(actions(id))
+
         for (position <- b.lastPos) {
-          follow.getOrElseUpdate(position, IntSet.empty) ++= c.firstPos
+          follow.getOrElseUpdate(position, DfaState.empty) ++= c.firstPos
+          follow(position).updateAction(c.firstPos.action)
         }
       case r: Range =>
         val a = dataSets(r.id)
@@ -248,6 +283,12 @@ object FiniteAutomaton {
         a.nullable = false
         a.firstPos += position
         a.lastPos  += position
+
+        println("[RANGE] updating action of " + a.firstPos + ": " + actions(r.id))
+        println("[RANGE] updating action of " + a.lastPos + ": " + actions(r.id))
+
+        a.firstPos.updateAction(actions(r.id))
+        a.lastPos.updateAction(actions(r.id))
 
         lookup(position) = IntRange(r.from, r.to)
         position += 1
@@ -260,22 +301,40 @@ object FiniteAutomaton {
         a.firstPos ++= b.firstPos
         a.lastPos ++= b.lastPos
 
+        println("[KLEENE] updating action of " + a.firstPos + ": " + actions(id))
+        println("[KLEENE] updating action of " + a.lastPos + ": " + actions(id))
+
+        a.firstPos.updateAction(actions(id))
+        a.lastPos.updateAction(actions(id))
+
         for (i <- a.lastPos) {
-          follow.getOrElseUpdate(i, IntSet.empty) ++= a.firstPos
+          follow.getOrElseUpdate(i, DfaState.empty) ++= a.firstPos
+          follow(i).updateAction(a.firstPos.action)
         }
 
       case EmptyString(id) =>
         val a = dataSets(id)
         a.nullable = true
+
+        println("[EPSILON] updating action of " + a.firstPos + ": " + actions(id))
+        println("[EPSILON] updating action of " + a.lastPos + ": " + actions(id))
+
+        a.firstPos.updateAction(actions(id))
+        a.lastPos.updateAction(actions(id))
     }
 
-    /* insert end-marker to be able to detect final states */
-    val p = position
-    lookup(p) = IntRange(-1, -1)
-    position += 1
+    grammar.terminals.values.foreach { rule =>
+      val end = position
+      lookup(end) = IntRange(-1, -1)
+      position += 1
+    }
+
     helper(rule)
-    for (i <- dataSets(rule.id).lastPos) {
-      follow.getOrElseUpdate(i, IntSet.empty) += p
+
+    grammar.terminals.values.zipWithIndex.foreach { case (rule, end) =>
+      for (i <- dataSets(rule.id).lastPos) {
+        follow.getOrElseUpdate(i, DfaState.empty) += end
+      }
     }
 
     (dataSets, follow, lookup)

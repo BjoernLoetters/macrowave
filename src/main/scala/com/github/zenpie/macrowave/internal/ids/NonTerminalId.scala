@@ -1,3 +1,3 @@
 package com.github.zenpie.macrowave.internal.ids
 
-final class NonTerminalId(val id: Int) extends AnyVal
+final case class NonTerminalId(value: Int) extends Id

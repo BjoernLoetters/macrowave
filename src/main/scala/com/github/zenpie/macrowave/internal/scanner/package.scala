@@ -5,94 +5,99 @@ import scala.util.Sorting
 
 package object scanner {
 
-  implicit val rangeOrdering = new Ordering[Range] {
-    def compare(a: Range, b: Range): Int = Integer.compare(a.from, b.from)
+  implicit val rangeOrdering = new Ordering[(Char, Char)] {
+    def compare(a: (Char, Char), b: (Char, Char)): Int =
+      Character.compare(a._1, b._2)
   }
 
-  def rangeComplement(ranges: Seq[Range]): Seq[Range] = {
+  def rangeComplement(ranges: Seq[(Char, Char)]): Seq[(Char, Char)] = {
     val merged = resolveIntersections(ranges)
-    val result = ArrayBuffer[Range]()
+    val result = ArrayBuffer[(Char, Char)]()
     var i = 0
     var s = 0.toChar
     while (i < merged.size) {
-      val range = merged(i)
-      if (s != range.from) {
-        result += Range(s, (range.from - 1).toChar)
+      val (from, to) = merged(i)
+      if (s != from) {
+        result += ((s, (from - 1).toChar))
       }
-      if (range.to < Char.MaxValue) {
-        s = (range.to + 1).toChar
+      if (to < Char.MaxValue) {
+        s = (to + 1).toChar
       }
       i += 1
     }
     if (s < Char.MaxValue) {
-      result += Range(s, Char.MaxValue)
+      result += ((s, Char.MaxValue))
     }
     result
   }
+  
+  def rangesIntersect(afrom: Char, ato: Char, bfrom: Char, bto: Char): Boolean = 
+    ato >= bfrom && afrom <= bto
 
-  def rangesIntersect(a: Range, b: Range): Boolean =
-    a.to >= b.from && a.from <= b.to
-
-  def resolveIntersections(ranges: Seq[Range]): Seq[Range] = {
+  def resolveIntersections(ranges: Seq[(Char, Char)]): Seq[(Char, Char)] = {
     val result = ArrayBuffer(ranges: _*)
     var i, j, intersection, insert = 0
-    var a, b: Range = null
+    var afrom, ato, bfrom, bto: Char = '\u0000'
 
     while (i < result.size) {
       j = i + 1
-      a = result(i)
+      val (afrom_, ato_) = result(i)
+      afrom = afrom_
+      ato = ato_
       while (j < result.size) {
-        b = result(j)
-        if (rangesIntersect(a, b)) {
+        val (bfrom_, bto_) = result(j)
+        bfrom = bfrom_
+        bto = bto_
+        if (rangesIntersect(afrom, ato, bfrom, bto)) {
           result.remove(j)
           result.remove(i)
           i -= 1
-          intersection = Math.max(0, Math.min(a.to, b.to) - Math.max(a.from, b.from))
-          if (a.from <= b.from && a.to >= b.to) {
+          intersection = Math.max(0, Math.min(ato, bto) - Math.max(afrom, bfrom))
+          if (afrom <= bfrom && ato >= bto) {
             // a contains b
             insert = j - 1
-            result.insert(insert, Range(b.from, b.to))
+            result.insert(insert, (bfrom, bto))
             insert += 1
-            if ((b.from.toInt - 1) - a.from.toInt >= 0) {
-              result.insert(insert, Range(a.from, (b.from - 1).toChar))
+            if ((bfrom.toInt - 1) - afrom.toInt >= 0) {
+              result.insert(insert, (afrom, (bfrom - 1).toChar))
               insert += 1
             }
-            if (a.to.toInt - (b.to.toInt + 1) >= 0) {
-              result.insert(insert, Range((b.to + 1).toChar, a.to))
+            if (ato.toInt - (bto.toInt + 1) >= 0) {
+              result.insert(insert, ((bto + 1).toChar, ato))
             }
-          } else if (b.from <= a.from && b.to >= a.to) {
+          } else if (bfrom <= afrom && bto >= ato) {
             // b contains a
             insert = j - 1
-            result.insert(insert, Range(a.from, a.to))
+            result.insert(insert, (afrom, ato))
             insert += 1
-            if ((a.from.toInt - 1) - b.from.toInt >= 0) {
-              result.insert(insert, Range(b.from, (a.from - 1).toChar))
+            if ((afrom.toInt - 1) - bfrom.toInt >= 0) {
+              result.insert(insert, (bfrom, (afrom - 1).toChar))
               insert += 1
             }
-            if (b.to.toInt - (a.to.toInt + 1) >= 0) {
-              result.insert(insert, Range((a.to + 1).toChar, b.to))
+            if (bto.toInt - (ato.toInt + 1) >= 0) {
+              result.insert(insert, ((ato + 1).toChar, bto))
             }
-          } else if (a.from <= b.from) {
+          } else if (afrom <= bfrom) {
             insert = j - 1
-            result.insert(insert, Range(b.from, a.to))
+            result.insert(insert, (bfrom, ato))
             insert += 1
-            if ((b.from.toInt - 1) - a.from.toInt >= 0) {
-              result.insert(insert, Range(a.from, (b.from - 1).toChar))
+            if ((bfrom.toInt - 1) - afrom.toInt >= 0) {
+              result.insert(insert, (afrom, (bfrom - 1).toChar))
               insert += 1
             }
-            if (b.to.toInt - (a.to.toInt + 1) >= 0) {
-              result.insert(insert, Range((a.to + 1).toChar, b.to))
+            if (bto.toInt - (ato.toInt + 1) >= 0) {
+              result.insert(insert, ((ato + 1).toChar, bto))
             }
           } else {
             insert = j - 1
-            result.insert(insert, Range(a.from, b.to))
+            result.insert(insert, (afrom, bto))
             insert += 1
-            if ((a.from.toInt - 1) - b.from.toInt >= 0) {
-              result.insert(insert, Range(b.from, (a.from - 1).toChar))
+            if ((afrom.toInt - 1) - bfrom.toInt >= 0) {
+              result.insert(insert, (bfrom, (afrom - 1).toChar))
               insert += 1
             }
-            if (a.to.toInt - (b.to.toInt + 1) >= 0) {
-              result.insert(insert, Range((b.to + 1).toChar, a.to))
+            if (ato.toInt - (bto.toInt + 1) >= 0) {
+              result.insert(insert, ((bto + 1).toChar, ato))
             }
           }
           j = result.size

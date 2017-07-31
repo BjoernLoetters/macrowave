@@ -9,6 +9,8 @@ scalaVersion := "2.11.8"
 
 resolvers += Resolver.sonatypeRepo("releases")
 
+scalacOptions ++= Seq("-deprecation", "-feature")
+
 addCompilerPlugin(
   "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 )
@@ -20,3 +22,8 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5"
 )
 
+lazy val generateRuleActions = taskKey[Seq[File]]("Generates the RuleAction boilerplate mixin")
+
+generateRuleActions := RuleActionBoilerplate.generate((sourceManaged in Compile).value)
+
+(sourceGenerators in Compile) += generateRuleActions.taskValue

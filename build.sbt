@@ -9,6 +9,8 @@ scalaVersion := "2.11.8"
 
 resolvers += Resolver.sonatypeRepo("releases")
 
+scalacOptions ++= Seq("-deprecation", "-feature")
+
 addCompilerPlugin(
   "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 )

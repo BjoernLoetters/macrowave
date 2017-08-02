@@ -3,7 +3,7 @@ package com.github.zenpie.macrowave.internal.parser
 import com.github.zenpie.macrowave.internal.ids.{ActionId, TypeId}
 
 sealed trait Rule {
-  val tpe: Any
+  val tpe: TypeId
 }
 
 case class Concatenate(left: Rule, right: Rule, tpe: TypeId) extends Rule

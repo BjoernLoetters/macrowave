@@ -45,6 +45,10 @@ final class Grammar(val c: whitebox.Context) {
 
   private[internal] var whiteSpace = Option.empty[TerminalId]
 
+  /* symbol strings */
+
+  private[internal] val symbolStrings = mutable.Map[NonTerminalId, mutable.Set[parser.SymbolString]]()
+
   /* auxiliary definitions */
 
   private[internal] val terminals = mutable.Map[TerminalId, scanner.Rule]()

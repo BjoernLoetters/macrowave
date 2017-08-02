@@ -2,7 +2,7 @@ package com.github.zenpie.macrowave.internal
 
 import java.util.LinkedList
 
-import com.github.zenpie.macrowave.internal.parser.RuleValidation
+import com.github.zenpie.macrowave.internal.parser.{RuleValidation, SymbolString}
 
 import scala.reflect.macros.whitebox
 
@@ -25,6 +25,8 @@ class Macrowave(val c: whitebox.Context) extends AnyRef
         scannerRulesFromStatements(grammar, stmList)
         parserRulesFromStatements(grammar, stmList)
         RuleValidation.validateParserRules(grammar)
+
+        SymbolString.fromGrammar(grammar)
 
         q"""$mods class $cname(...$ctors) extends $superclasses {}"""
       case x =>

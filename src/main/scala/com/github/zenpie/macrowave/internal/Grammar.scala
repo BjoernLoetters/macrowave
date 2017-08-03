@@ -49,6 +49,12 @@ final class Grammar(val c: whitebox.Context) {
 
   private[internal] val symbolStrings = mutable.Map[NonTerminalId, mutable.Set[parser.SymbolString]]()
 
+  /* first and follows sets for each symbol / nullable symbols */
+
+  private[internal] val firstSet  = mutable.Map[parser.Symbol, mutable.Set[parser.TerminalSymbol]]()
+  private[internal] val followSet = mutable.Map[parser.Symbol, mutable.Set[parser.TerminalSymbol]]()
+  private[internal] val nullable  = mutable.Set[parser.NonTerminalSymbol]()
+
   /* auxiliary definitions */
 
   private[internal] val terminals = mutable.Map[TerminalId, scanner.Rule]()

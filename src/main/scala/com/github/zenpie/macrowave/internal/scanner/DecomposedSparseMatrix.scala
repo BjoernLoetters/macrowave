@@ -5,9 +5,9 @@ import java.util.Random
 import scala.collection.mutable.ArrayBuffer
 
 case class DecomposedSparseMatrix(
-  X     : Array[Short],
-  Y     : Array[Short],
-  value : Array[Short],
+  X     : Array[Int],
+  Y     : Array[Int],
+  value : Array[Int],
   column: Array[Int],
   row   : Array[Int]
 )
@@ -15,15 +15,7 @@ case class DecomposedSparseMatrix(
 object DecomposedSparseMatrix {
 
   def compress(automaton: FiniteAutomaton): DecomposedSparseMatrix = {
-    def validTable: Boolean =
-      automaton.table.forall(_.forall(v => v > 0 && v < Char.MaxValue.toInt))
-    require(validTable)
-
-    val table = automaton.table.map { xs =>
-      xs map (x => (x + Short.MinValue).toShort)
-    }
-
-    val (x, y, r)            = decomposeMatrix(table)
+    val (x, y, r)            = decomposeMatrix(automaton.table)
     val (value, column, row) = compressSparseTable(r)
 
     DecomposedSparseMatrix(x, y, value, column, row)
@@ -32,8 +24,8 @@ object DecomposedSparseMatrix {
   /**
     * @see http://www.netlib.org/utk/people/JackDongarra/etemplates/node373.html
     */
-  private def compressSparseTable(sparse: Array[Array[Short]]): (Array[Short], Array[Int], Array[Int]) = {
-    val value  = ArrayBuffer[Short]()
+  private def compressSparseTable(sparse: Array[Array[Int]]): (Array[Int], Array[Int], Array[Int]) = {
+    val value  = ArrayBuffer[Int]()
     val column = ArrayBuffer[Int]()
     val row    = ArrayBuffer[Int]()
 
@@ -67,19 +59,19 @@ object DecomposedSparseMatrix {
   /**
     * @see http://sourcedb.ict.cas.cn/cn/ictthesis/201103/P020110314767959510274.pdf
     */
-  private def decomposeMatrix(A: Array[Array[Short]]): (Array[Short], Array[Short], Array[Array[Short]]) = {
+  private def decomposeMatrix(A: Array[Array[Int]]): (Array[Int], Array[Int], Array[Array[Int]]) = {
     val m   = A.length
     val n   = Char.MaxValue
     val rnd = new Random()
-    val X   = Array.fill[Short](m)(rnd.nextInt().toShort)
-    val Y   = Array.fill[Short](n)(rnd.nextInt().toShort)
+    val X   = Array.fill[Int](m)(rnd.nextInt())
+    val Y   = Array.fill[Int](n)(rnd.nextInt())
 
     var changed = false
 
     var i  = 0
     var j  = 0
-    val Di = new Array[Short](n)
-    val Dj = new Array[Short](m)
+    val Di = new Array[Int](n)
+    val Dj = new Array[Int](m)
 
     do {
       changed = false
@@ -90,7 +82,7 @@ object DecomposedSparseMatrix {
         j = 0
         while (j < n) {
 
-          Di(j) = (A(i)(j) - Y(j)).toShort
+          Di(j) = A(i)(j) - Y(j)
           j += 1
         }
 
@@ -110,7 +102,7 @@ object DecomposedSparseMatrix {
         i = 0
         while (i < m) {
 
-          Dj(i) = (A(i)(j) - X(i)).toShort
+          Dj(i) = A(i)(j) - X(i)
           i += 1
         }
 
@@ -125,17 +117,17 @@ object DecomposedSparseMatrix {
       }
     } while (changed)
 
-    val R = Array.tabulate[Array[Short]](A.length) { i =>
+    val R = Array.tabulate[Array[Int]](A.length) { i =>
       Array.tabulate(A(i).length) { j =>
-        (A(i)(j) - X(i) - Y(j)).toShort
+        A(i)(j) - X(i) - Y(j)
       }
     }
 
     (X, Y, R)
   }
 
-  private def getMostFrequentElement(array: Array[Short]): Short = {
-    val map = scala.collection.mutable.Map.empty[Short, Int]
+  private def getMostFrequentElement(array: Array[Int]): Int = {
+    val map = scala.collection.mutable.Map.empty[Int, Int]
     var s   = array(0)
 
     var i = 0
@@ -153,7 +145,7 @@ object DecomposedSparseMatrix {
     s
   }
 
-  private def occurrences(x: Short, S: Array[Short]): Int = {
+  private def occurrences(x: Int, S: Array[Int]): Int = {
     var counter = 0
     var i       = 0
 

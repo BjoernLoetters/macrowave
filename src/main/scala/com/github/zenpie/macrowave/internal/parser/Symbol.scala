@@ -1,8 +1,11 @@
 package com.github.zenpie.macrowave.internal.parser
 
+import com.github.zenpie.macrowave.internal.Grammar
 import com.github.zenpie.macrowave.internal.ids.{NonTerminalId, TerminalId}
 
-sealed trait Symbol
+sealed trait Symbol {
+  def show(implicit grammar: Grammar): String
+}
 sealed trait TerminalSymbol extends Symbol
 
 case class TokenSymbol(terminalId: TerminalId) extends TerminalSymbol {
@@ -11,17 +14,19 @@ case class TokenSymbol(terminalId: TerminalId) extends TerminalSymbol {
     case _              => false
   }
   override def hashCode(): Int = 1
-  override def toString = s"Token($terminalId)"
+  def show(implicit grammar: Grammar): String =
+    grammar.terminalNames(terminalId)
 }
 
 case object EpsilonSymbol extends TerminalSymbol {
-  override def toString = "ε"
+  def show(implicit grammar: Grammar): String = "ε"
 }
 
 case object EofSymbol extends TerminalSymbol {
-  override def toString = "<eof>"
+  def show(implicit grammar: Grammar): String = "<eof>"
 }
 
 case class NonTerminalSymbol(nonTerminalId: NonTerminalId) extends Symbol {
-  override def toString = s"NonTerminal($nonTerminalId)"
+  def show(implicit grammar: Grammar): String =
+    grammar.nonTerminalNames(nonTerminalId)
 }

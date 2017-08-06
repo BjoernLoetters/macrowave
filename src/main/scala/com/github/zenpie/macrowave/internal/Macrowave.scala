@@ -3,7 +3,7 @@ package com.github.zenpie.macrowave.internal
 import java.util.LinkedList
 
 import com.github.zenpie.macrowave.internal.scanner.FiniteAutomaton
-import com.github.zenpie.macrowave.internal.parser.{RuleValidation, SymbolString}
+import com.github.zenpie.macrowave.internal.parser.{RuleValidation, SetComputation, SymbolString}
 
 import scala.reflect.macros.whitebox
 
@@ -29,6 +29,7 @@ class Macrowave(val c: whitebox.Context) extends AnyRef
         val dfa = FiniteAutomaton.generate(grammar)
 
         SymbolString.fromGrammar(grammar)
+        SetComputation.calculateFirstAndFollowSets(grammar)
 
         q"""$mods class $cname(...$ctors) extends $superclasses {}"""
       case x =>

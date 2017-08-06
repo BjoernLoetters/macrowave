@@ -3,7 +3,7 @@ package com.github.zenpie.macrowave.internal.scanner
 import java.util.LinkedList
 
 import com.github.zenpie.macrowave.internal._
-import com.github.zenpie.macrowave.internal.ids.TerminalId
+import com.github.zenpie.macrowave.internal.ids.{ScannerRuleId, TerminalId}
 
 import scala.collection.mutable
 import scala.reflect.macros.whitebox
@@ -20,7 +20,7 @@ trait RuleParser extends MacroUtils {
     val regexps = mutable.Map.empty[String, scanner.Rule]
 
     def regexpDefinition(tree: Tree, name: TermName, tpt: Tree, value: Tree): Unit = {
-      regexps += ((name.toString, ScannerRule(regexps, value)))
+      regexps += ((name.toString, ScannerRule(grammar, regexps, value)))
     }
 
     stms.popsome {
@@ -38,7 +38,7 @@ trait RuleParser extends MacroUtils {
       val terminalId = grammar.terminalIdProvider.next()
       grammar.namedTerminals    += ((name.toString, terminalId))
       grammar.terminalNames     += ((terminalId, name.toString))
-      grammar.terminals         += ((terminalId, Token(regexps, value)))
+      grammar.terminals         += ((terminalId, Token(grammar, regexps, value)))
       grammar.terminalPositions += ((terminalId, tree.pos.asInstanceOf[grammar.Position]))
 
       if (hasAnnotation(tree, WhiteSpaceTpe)) {
@@ -66,9 +66,13 @@ trait RuleParser extends MacroUtils {
 
   }
 
-  private def ScannerRule(refs: mutable.Map[String, scanner.Rule], tree: Tree): scanner.Rule = {
+  private def ScannerRule(grammar: Grammar, refs: mutable.Map[String, scanner.Rule], tree: Tree): scanner.Rule = {
+    val parser = new RegExpParser(grammar)
+
+    val ruleId = grammar.scannerRuleIdProvider.next _
+
     def parseRegex(tree: Tree, str: String): scanner.Rule =
-      RegExpParser.parse(str) match {
+      parser.parse(str) match {
         case Success(x) => x
         case Failure(_) => c.abort(tree.pos, "Invalid or unsupported Regex!")
       }
@@ -77,20 +81,20 @@ trait RuleParser extends MacroUtils {
       case q"$l ~ $r" =>
         val a = helper(l)
         val b = helper(r)
-        scanner.Concatenate(a, b)
+        scanner.Concatenate(ruleId(), a, b)
       case q"$l | $r" =>
         val a = helper(l)
         val b = helper(r)
-        scanner.Alternate(a, b)
+        scanner.Alternate(ruleId(), a, b)
       case q"$x.*" =>
         val y = helper(x)
-        scanner.Kleene(y)
+        scanner.Kleene(ruleId(), y)
       case q"$x.?" =>
         val y = helper(x)
-        scanner.Alternate(EmptyString, y)
+        scanner.Alternate(ruleId(), EmptyString(ruleId()), y)
       case q"$x.+" =>
         val y = helper(x)
-        scanner.Concatenate(y, scanner.Kleene(y))
+        scanner.Concatenate(ruleId(), y, scanner.Kleene(ruleId(), y))
 
       case q"$prefix.regex(${str: String})" if isMacrowavePackageObj(prefix) =>
         parseRegex(tree, str)
@@ -100,8 +104,8 @@ trait RuleParser extends MacroUtils {
         if (str.isEmpty) {
           c.abort(tree.pos, "Literals must not be empty!")
         } else {
-          val ranges = str.map(c => scanner.Range(c, c): scanner.Rule)
-          ranges.tail.foldLeft(ranges.head)(scanner.Concatenate)
+          val ranges = str.map(scanner.Range(ruleId(), _): scanner.Rule)
+          ranges.tail.foldLeft(ranges.head)(scanner.Concatenate(ruleId(), _, _))
         }
       case q"$_.this.${ref: TermName}" =>
         refs(ref.toString)
@@ -113,9 +117,9 @@ trait RuleParser extends MacroUtils {
     helper(tree)
   }
 
-  private def Token(refs: mutable.Map[String, scanner.Rule], tree: Tree): scanner.Rule = tree match {
+  private def Token(grammar: Grammar, refs: mutable.Map[String, scanner.Rule], tree: Tree): scanner.Rule = tree match {
     case q"$prefix.token($r)" if isMacrowavePackageObj(prefix) =>
-      ScannerRule(refs, r)
+      ScannerRule(grammar, refs, r)
     case x =>
       c.abort(x.pos, s"'${show(x)}' is not a token!")
   }

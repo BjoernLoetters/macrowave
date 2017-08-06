@@ -5,23 +5,23 @@ import java.io.{ByteArrayOutputStream, DataOutputStream}
 import scala.collection.mutable
 import scala.reflect.macros.whitebox
 
-final class Lifting[Plant](val c: whitebox.Context) {
+final class Lifting[DstTree](val c: whitebox.Context) {
   import c.universe._
 
-  def lift[T](v: T)(implicit codecFactory: whitebox.Context => LiftCodec[T]): TreeRef[Plant, T] = {
+  def lift[T](v: T)(implicit codecFactory: whitebox.Context => LiftCodec[T]): TreeRef[DstTree, T] = {
     val codec   = codecFactory(c)
     val treeRef = nextTreeRef[T]()
     liftData += ((treeRef, copyRawData(codec, v)))
     treeRef
   }
 
-  def build(): LiftResult[Plant] = {
+  def build(): LiftResult[DstTree] = {
     val maxDataSize   = 1 << 13
     val partArraySize = 1 << 13
     val maxPartCount  = maxDataSize / partArraySize
 
     val definitions = mutable.ArrayBuffer.empty[Tree]
-    val treeRefs    = mutable.Map.empty[TreeRef[Plant, _], Plant]
+    val treeRefs    = mutable.Map.empty[TreeRef[DstTree, _], DstTree]
 
     var objectName: TermName = null
     var fieldName : TermName = null
@@ -98,14 +98,14 @@ final class Lifting[Plant](val c: whitebox.Context) {
         freshContainer(flush = false)
       }
 
-      treeRefs += ((ref, generateUnpackExpression(stores, codec).asInstanceOf[Plant]))
+      treeRefs += ((ref, generateUnpackExpression(stores, codec).asInstanceOf[DstTree]))
     }
     freshContainer(flush = true)
 
     liftData.clear()
     LiftResult(
-      definitions.asInstanceOf[Seq[Plant]],
-      treeRefs.toMap.asInstanceOf[Map[TreeRef[Plant, Any], Plant]])
+      definitions.asInstanceOf[Seq[DstTree]],
+      treeRefs.toMap.asInstanceOf[Map[TreeRef[DstTree, Any], DstTree]])
   }
 
   private def generateUnpackExpression(stores: mutable.ListBuffer[Store], codec: LiftCodec[Any]): Tree = {
@@ -171,11 +171,11 @@ final class Lifting[Plant](val c: whitebox.Context) {
 
   private case class RawLiftData(data: Array[Byte], codec: LiftCodec[Any])
 
-  private val liftData = mutable.Map.empty[TreeRef[Plant, _], RawLiftData]
+  private val liftData = mutable.Map.empty[TreeRef[DstTree, _], RawLiftData]
   private var refIds   = 0
 
-  private def nextTreeRef[T](): TreeRef[Plant, T] = {
-    val ref = TreeRef[Plant, T](refIds)
+  private def nextTreeRef[T](): TreeRef[DstTree, T] = {
+    val ref = TreeRef[DstTree, T](refIds)
     refIds += 1
     ref
   }

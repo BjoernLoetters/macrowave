@@ -6,6 +6,7 @@ import com.github.zenpie.macrowave.internal.{Grammar, NameProvider}
 import scala.collection.mutable
 
 case class SymbolString(data: Vector[Symbol], action: Option[ActionId]) {
+
   def ++(str: SymbolString): SymbolString = {
     require(action.isEmpty)
     require(str.action.isEmpty)
@@ -13,17 +14,11 @@ case class SymbolString(data: Vector[Symbol], action: Option[ActionId]) {
   }
 
   def show(implicit grammar: Grammar): String = {
-    val symbolsStr = data map {
-      case EofSymbol                        => EofSymbol.toString
-      case EpsilonSymbol                    => EpsilonSymbol.toString
-      case NonTerminalSymbol(nonTerminalId) => grammar.nonTerminalNames(nonTerminalId)
-      case TokenSymbol(terminalId)          => grammar.terminalNames(terminalId)
-    } mkString " "
-
-    val actionStr = action.fold("")(x => " " + grammar.actions(x).toString)
-
+    val symbolsStr = data map (_.show) mkString " "
+    val actionStr  = action.fold("")(x => " " + grammar.actions(x).toString)
     symbolsStr + actionStr
   }
+
 }
 
 object SymbolString {

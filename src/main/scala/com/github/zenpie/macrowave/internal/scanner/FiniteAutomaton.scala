@@ -40,9 +40,7 @@ object FiniteAutomaton {
     val root = grammar.terminals.values.reduceLeft(Alternate(grammar.scannerRuleIdProvider.next(), _, _))
     val (start, lookup, follow) = collect(root)
     val (states, finals, table) = construct(start, lookup, follow)
-
-    printASCIITable(states, finals, table)
-
+    
     minimize(states, finals, table)
   }
 

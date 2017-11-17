@@ -20,9 +20,6 @@ object SetComputation {
     def followSet(symbol: Symbol): mutable.Set[TerminalSymbol] =
       grammar.followSet.getOrElseUpdate(symbol, mutable.Set.empty[TerminalSymbol])
 
-    def isNullable(array: Vector[Symbol]): Boolean =
-      array.toSet.subsetOf(grammar.nullable.asInstanceOf[mutable.Set[Symbol]])
-
     for (terminalId <- grammar.terminals.keys) {
       val terminalSymbol = TokenSymbol(terminalId)
       firstSet(terminalSymbol) += terminalSymbol
@@ -45,45 +42,68 @@ object SetComputation {
 
       for ((nonTerminalId, rules) <- grammar.symbolStrings) {
         for (rule <- rules) {
+
           val symbols = rule.data
           val k       = symbols.size
           val X       = NonTerminalSymbol(nonTerminalId)
 
-          if (isNullable(symbols)) {
+          val cache = Array.fill(k + 1, k + 1)(false)
+          def isNullable(symbols: Vector[Symbol], start: Int, end: Int): Boolean = {
+            if (end - start == 0) {
+              cache(start)(end) = true
+            } else if (cache(start)(end - 1)) {
+              val nullables = grammar.nullable.asInstanceOf[mutable.Set[Symbol]]
+              cache(start)(end) = nullables.contains(symbols(end - 1))
+            }
+            cache(start)(end)
+          }
+
+          var i = 0
+          while (i < k) {
+            if (isNullable(symbols, 0, i)) {
+              i += 1
+            } else {
+              i = k
+            }
+          }
+          if (isNullable(symbols, 0, i)) {
             val psize = grammar.nullable.size
             grammar.nullable += X
             nchanged ||= psize != grammar.nullable.size
           }
 
-          var i = 0
+          i = 0
           while (i < k) {
-            if (i == 0 || isNullable(symbols.slice(0, i))) {
+            if (isNullable(symbols, 0, i)) {
               val psize = firstSet(X).size
               firstSet(X) ++= firstSet(symbols(i))
               fchanged ||= psize != firstSet(X).size
             }
 
-            if (i == k - 1) {
+            var j = i + 1
+            while (j < k) {
+              if (isNullable(symbols, j, k)) {
+                j += 1
+              } else {
+                j = k
+              }
+            }
+            if (isNullable(symbols, i + 1, j)) {
               val psize = followSet(symbols(i)).size
               followSet(symbols(i)) ++= followSet(X)
               flchanged ||= psize != followSet(symbols(i)).size
             }
 
-            var j = i + 1
+            j = i + 1
             while (j < k) {
-              if (isNullable(symbols.slice(i + 1, k))) {
-                val psize = followSet(symbols(i)).size
-                followSet(symbols(i)) ++= followSet(X)
-                flchanged ||= psize != followSet(symbols(i)).size
-              }
-
-              if (i + 1 == j || isNullable(symbols.slice(i + 1, j))) {
+              if (isNullable(symbols, i + 1, j)) {
                 val psize = followSet(symbols(i)).size
                 followSet(symbols(i)) ++= firstSet(symbols(j))
                 flchanged ||= psize != followSet(symbols(i)).size
+                j += 1
+              } else {
+                j = k
               }
-
-              j += 1
             }
 
             i += 1

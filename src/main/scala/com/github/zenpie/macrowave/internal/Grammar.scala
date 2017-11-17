@@ -63,15 +63,14 @@ final class Grammar(val c: whitebox.Context) {
       val name = nonTerminalNames(id)
       val symbol = NonTerminalSymbol(id)
 
-      val followString = followSet(symbol).map {
-        case TokenSymbol(id) => terminalNames(id)
-        case x => x.toString
-      }.mkString("{ ", ", ", " }")
+      def symbolSetString(set: mutable.Set[parser.TerminalSymbol]): String =
+        set.map {
+          case TokenSymbol(id) => terminalNames(id)
+          case x => x.toString
+        }.mkString("{ ", ", ", " }")
 
-      val firstString = firstSet(symbol).map {
-        case TokenSymbol(id) => terminalNames(id)
-        case x => x.toString
-      }.mkString("{ ", ", ", " }")
+      val followString = symbolSetString(followSet(symbol))
+      val firstString  = symbolSetString(firstSet(symbol))
 
       val nullableString = if (nullable.contains(symbol)) "YES" else "NO"
 

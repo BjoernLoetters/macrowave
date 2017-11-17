@@ -1,6 +1,7 @@
 package com.github.zenpie.macrowave.internal
 
 import com.github.zenpie.macrowave.internal.ids._
+import com.github.zenpie.macrowave.internal.parser.{NonTerminalSymbol, TokenSymbol}
 
 import scala.collection.mutable
 import scala.reflect.macros.whitebox
@@ -56,6 +57,30 @@ final class Grammar(val c: whitebox.Context) {
   private[internal] val firstSet  = mutable.Map[parser.Symbol, mutable.Set[parser.TerminalSymbol]]()
   private[internal] val followSet = mutable.Map[parser.Symbol, mutable.Set[parser.TerminalSymbol]]()
   private[internal] val nullable  = mutable.Set[parser.NonTerminalSymbol]()
+
+  def dumpSymbolSets(): Unit = {
+    for ((_, id) <- namedNonTerminals) {
+      val name = nonTerminalNames(id)
+      val symbol = NonTerminalSymbol(id)
+
+      val followString = followSet(symbol).map {
+        case TokenSymbol(id) => terminalNames(id)
+        case x => x.toString
+      }.mkString("{ ", ", ", " }")
+
+      val firstString = firstSet(symbol).map {
+        case TokenSymbol(id) => terminalNames(id)
+        case x => x.toString
+      }.mkString("{ ", ", ", " }")
+
+      val nullableString = if (nullable.contains(symbol)) "YES" else "NO"
+
+      println(s"FOLLOW($name) = $followString")
+      println(s"FIRST($name) = $firstString")
+      println(s"NULLABLE($name) = $nullableString")
+      println()
+    }
+  }
 
   /* auxiliary definitions */
 

@@ -28,9 +28,11 @@ object RuleValidation {
       case parser.Terminal(_, _) => ()
       case parser.NonTerminal(name, _) =>
         val referencedRuleId = namedNonTerminals(name)
-        reachableNonTerminals += referencedRuleId
-        val referencedRule = nonTerminals(referencedRuleId)
-        helper(referencedRule)
+        if (!reachableNonTerminals.contains(referencedRuleId)) {
+          reachableNonTerminals += referencedRuleId
+          val referencedRule = nonTerminals(referencedRuleId)
+          helper(referencedRule)
+        }
     }
 
     reachableNonTerminals += startRule

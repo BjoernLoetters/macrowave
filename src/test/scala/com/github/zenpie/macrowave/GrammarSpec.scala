@@ -268,4 +268,17 @@ class GrammarSpec extends FlatSpec with Matchers {
     }
   }
 
+  it should "not throw a stack-overflow-exception, if a production is recursive" in {
+    @grammar class Parser {
+      import com.github.zenpie.macrowave
+
+      val NUMBER: Token = token(macrowave.regex("[0-9]+"))
+      val DIGIT : Token = token(macrowave.regex("[0-9]"))
+
+      @start def S: Rule1[String] = A
+      def A: Rule1[String] = B ~ A ^^ (_ + _) | B
+      def B: Rule1[String] = NUMBER
+    }
+  }
+
 }

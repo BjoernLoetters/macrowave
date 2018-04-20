@@ -3,6 +3,17 @@ package com.github.zenpie.macrowave
 import java.util.LinkedList
 
 package object internal {
+  
+  private[internal] class Counter(val initial: Int) {
+    private var counter = initial
+    
+    def next(): Int = {
+      val result = counter
+      counter += 1
+      result
+    }
+    
+  }
 
   private[internal] implicit class LinkedListOps[T](list: LinkedList[T]) {
 
